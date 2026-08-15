@@ -1,0 +1,52 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+repositories {
+	// Loom fuegt die Minecraft-/Fabric-Repositories selbst hinzu.
+	// Baritone hat kein publiziertes Maven-Artefakt fuer 26.2, deshalb libs/.
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Baritone ist eine Soft-Dependency: nur zur Compile-Zeit auf dem Classpath,
+	// zur Laufzeit liefert der separat installierte Baritone-Mod die Klassen.
+	// Das JAR wird NICHT eingecheckt (LGPL-3.0 - einbinden, nicht vendorn).
+	compileOnly fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+// MC 26.2 laeuft auf Java 25.
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+processResources {
+	inputs.property "version", project.version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version
+	}
+}
+
+jar {
+	from("LICENSE") {
+		rename { "${it}_${project.archives_base_name}" }
+	}
+}
