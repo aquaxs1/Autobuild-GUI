@@ -434,9 +434,74 @@ auf - die 0-basierte Index-Semantik ist bestätigt, nicht nur angenommen.
 `a(int)` (zwei Overloads namens `a` mit identischem Parametertyp, nur unterschiedlichem
 Rückgabetyp - in Java-Quellcode nicht direkt aufrufbar, nur per Reflection). Betrifft uns nicht:
 unser eigener `LitematicaAdapter` (Phase 2) liest Litematica direkt, ohne je durch Baritones
-`LitematicaHelper` zu gehen. Das öffentliche `baritone.api.*`-Paket bleibt in beiden Distributionen
-(dysnasia-Standalone und Meteor-eingebettet) unverändert lesbar - vermutlich ein bewusster
-ProGuard-`-keep` für die öffentliche Library-API.
+`LitematicaHelper` zu gehen. In diesem (Meteor-)JAR bleibt das öffentliche
+`baritone.api.*`-Paket unverändert lesbar - es ist eine `api`-Variante.
+
+> **Nachtrag:** Eine frühere Fassung dieses Abschnitts schloss daraus, `baritone.api.*`
+> bleibe *generell* erhalten. Das ist falsch und wurde durch ein zweites, echtes JAR
+> widerlegt - siehe den folgenden Abschnitt. Ob die API erhalten ist, hängt allein an der
+> gewählten Distributionsvariante.
+
+### Baritone liefert DREI Varianten - nur zwei davon sind für andere Mods nutzbar
+
+**Das ist der wichtigste Fund für dieses Projekt.** Aus `BaritoneGradleTask.java`:
+
+```java
+ARTIFACT_UNOPTIMIZED = "%s-unoptimized-%s.jar";
+ARTIFACT_API         = "%s-api-%s.jar";
+ARTIFACT_STANDALONE  = "%s-standalone-%s.jar";
+```
+
+Für einen Fabric-Build heißen die Dateien also:
+
+| Datei | `baritone.api.*` | Für uns nutzbar |
+|---|---|---|
+| `baritone-api-fabric-26.2.jar` | erhalten | **ja** |
+| `baritone-unoptimized-fabric-26.2.jar` | erhalten (kein ProGuard) | ja |
+| `baritone-standalone-fabric-26.2.jar` | **wegobfuskiert** | **nein** |
+
+Der Unterschied entsteht in `scripts/proguard.pro` Zeile 31:
+
+```
+-keep class baritone.api.** { *; } # this is the keep api
+```
+
+und `ProguardTask.generateConfigs()`:
+
+```java
+// For the Standalone config, don't keep the API package
+standalone.removeIf(s -> s.contains("# this is the keep api"));
+```
+
+In der `standalone`-Variante heißen alle API-Methoden nur noch `a()`, `b()`, `c()`.
+Per `javap` gegen ein echtes `standalone`-JAR (dysnasia/baritone-26.2, Tag `26.2`) bestätigt:
+
+```java
+// baritone.api.BaritoneAPI - standalone
+public static IBaritoneProvider a();   // war getProvider()
+public static Settings a();            // war getSettings()
+
+// baritone.api.IBaritone - standalone: 17 Methoden, ALLE "a()"
+public abstract baritone.process.BuilderProcess a();   // war getBuilderProcess()
+public abstract baritone.behavior.PathingBehavior a(); // war getPathingBehavior()
+// ... 15 weitere
+```
+
+Zwei Konsequenzen, beide hart:
+
+1. **Dagegen kompilieren ist unmöglich.** Methoden, die sich nur im Rückgabetyp
+   unterscheiden, sind gültiger Bytecode, aber in Java-Quellcode nicht aufrufbar.
+2. **Auch zur Laufzeit inkompatibel.** Ein gegen die `api`-Variante kompilierter Mod
+   wirft gegen ein installiertes `standalone`-JAR einen `NoSuchMethodError`. Der Nutzer
+   muss also ebenfalls die `api`- oder `unoptimized`-Variante *installieren*.
+
+Zusätzlich schrumpft ProGuard in der `standalone`-Variante ungenutzte Methoden ganz weg -
+`IBuilderProcess` verliert dort u.a. `getApproxPlaceable()`, `getMinLayer()`,
+`getMaxLayer()` und `isPaused()`. Für Phase 5 (Material-Check über `getApproxPlaceable()`)
+ist die `api`-Variante damit zwingend, nicht nur bequem.
+
+`BaritoneAdapter` fängt deshalb `LinkageError` ab und meldet
+`BuildRequestResult.BARITONE_WITHOUT_API`, statt den Client mitzureißen.
 
 ### Zwei gültige Mod-IDs
 

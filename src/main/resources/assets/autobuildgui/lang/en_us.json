@@ -3,5 +3,6 @@
 	"gui.autobuildgui.title": "Autobuild",
 	"gui.autobuildgui.search": "Search...",
 	"gui.autobuildgui.litematica_missing": "Litematica not found.",
-	"gui.autobuildgui.baritone_missing": "Baritone not found."
+	"gui.autobuildgui.baritone_missing": "Baritone not found.",
+	"gui.autobuildgui.baritone_without_api": "This Baritone build has no API package (standalone variant). Please install the api or unoptimized variant."
 }

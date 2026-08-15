@@ -1,6 +1,7 @@
 package dev.aquaxs.autobuildgui.gui;
 
 import dev.aquaxs.autobuildgui.baritone.BaritoneAdapter;
+import dev.aquaxs.autobuildgui.baritone.BuildRequestResult;
 import dev.aquaxs.autobuildgui.litematica.LitematicaAdapter;
 import dev.aquaxs.autobuildgui.litematica.PlacementInfo;
 import net.minecraft.ChatFormatting;
@@ -59,12 +60,21 @@ public class AutobuildScreen extends Screen {
 	}
 
 	private void onPlacementClicked(PlacementInfo placement) {
-		if (BaritoneAdapter.buildPlacement(placement.index())) {
+		BuildRequestResult result = BaritoneAdapter.buildPlacement(placement.index());
+
+		if (result == BuildRequestResult.STARTED) {
 			this.onClose();
-		} else {
-			Component message = Component.translatable("gui.autobuildgui.baritone_missing").withStyle(ChatFormatting.RED);
-			this.minecraft.player.sendSystemMessage(message);
+			return;
 		}
+
+		String translationKey = switch (result) {
+			case BARITONE_MISSING -> "gui.autobuildgui.baritone_missing";
+			case BARITONE_WITHOUT_API -> "gui.autobuildgui.baritone_without_api";
+			case STARTED -> throw new IllegalStateException("bereits oben behandelt");
+		};
+
+		this.minecraft.player.sendSystemMessage(
+				Component.translatable(translationKey).withStyle(ChatFormatting.RED));
 	}
 
 	@Override
