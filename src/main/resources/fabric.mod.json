@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "autobuildgui",
+	"version": "${version}",
+	"name": "Autobuild GUI",
+	"description": "Menü, das in Litematica geladene Schematic-Placements auflistet und den Bau per Baritone startet.",
+	"authors": [
+		"aquaxs1"
+	],
+	"contact": {
+		"sources": "https://github.com/aquaxs1/Autobuild-GUI",
+		"issues": "https://github.com/aquaxs1/Autobuild-GUI/issues"
+	},
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"dev.aquaxs.autobuildgui.AutobuildGuiClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"litematica": "*",
+		"baritone": "*"
+	}
+}

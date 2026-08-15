@@ -21,7 +21,7 @@ Geklonte Referenzen (alle über GitHub erreichbar):
 | Minecraft | `26.2` | `fabric-example-mod/gradle.properties` |
 | Fabric Loader | `0.19.3` | dito; identisch in Baritone + Litematica |
 | Fabric API | `0.156.0+26.2` | dito; identisch in Litematica |
-| Fabric Loom | `1.17-SNAPSHOT` | dito (Litematica nutzt `1.17.+`) |
+| Fabric Loom | `1.17-SNAPSHOT` → löst auf zu **1.17.19** | dito (Litematica nutzt `1.17.+`) |
 | Gradle | `9.5.1` | `fabric-example-mod/gradle/wrapper/gradle-wrapper.properties` |
 | Java | `25` | `options.release = 25`, `VERSION_25` |
 
@@ -84,6 +84,44 @@ Component.literal(...) / Component.nullToEmpty(...)
 
 ---
 
+### Gegen das echte JAR verifiziert
+
+Ab hier stammt alles aus `javap` auf
+`~/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged-deobf/26.2/`.
+
+```java
+// net.minecraft.client.gui.screens.Screen
+protected Screen(Component title);
+protected void init();
+public void extractRenderState(GuiGraphicsExtractor, int, int, float);   // Override-Punkt
+public void extractBackground(GuiGraphicsExtractor, int, int, float);
+public final void extractRenderStateWithTooltipAndSubtitles(GuiGraphicsExtractor, int, int, float);
+public final void init(int, int);          // final - nicht ueberschreibbar
+public boolean isPauseScreen();
+public void onClose();
+protected <T extends GuiEventListener & Renderable & NarratableEntry> T addRenderableWidget(T);
+protected <T extends Renderable> T addRenderableOnly(T);
+
+// net.minecraft.client.gui.GuiGraphicsExtractor - Text heisst nicht mehr drawString
+public void text(Font, Component, int x, int y, int color);
+public void centeredText(Font, Component, int x, int y, int color);
+public void fill(int, int, int, int, int);
+public void fillGradient(int, int, int, int, int, int);
+public void enableScissor(int, int, int, int);   // fuer die Scroll-Liste in Phase 3
+public void disableScissor();
+public void blitSprite(RenderPipeline, Identifier, int, int, int, int);
+public void setTooltipForNextFrame(Font, List<Component>, Optional<TooltipComponent>, int, int);
+public int guiWidth();
+public int guiHeight();
+```
+
+**Zwei Umbenennungen, die man sonst falsch rät:**
+
+- `Minecraft.setScreen(...)` existiert nicht mehr → `Minecraft.setScreenAndShow(Screen)`.
+- `Minecraft.screen` existiert nicht mehr. Der aktuelle Screen hängt jetzt an
+  `net.minecraft.client.gui.Gui`: `client.gui.screen()` (Getter) und
+  `client.gui.setScreen(Screen)`. Das Feld `Minecraft.gui` ist `public final`.
+
 ## 3. Keybind (Fabric API 26.2)
 
 Das Modul heißt jetzt `fabric-key-mapping-api-v1` (vorher `fabric-key-binding-api-v1`).
@@ -98,6 +136,26 @@ public final class KeyMappingHelper {
 ```
 
 Typen: `net.minecraft.client.KeyMapping`, `com.mojang.blaze3d.platform.InputConstants`.
+
+`KeyMapping` selbst (aus dem JAR):
+
+```java
+public KeyMapping(String name, int keyCode, KeyMapping.Category category);
+public KeyMapping(String name, InputConstants.Type type, int keyCode, KeyMapping.Category category);
+public boolean consumeClick();
+public boolean isDown();
+```
+
+Die Kategorie ist in 26.2 **kein String mehr**, sondern der Record
+`KeyMapping.Category` mit den Konstanten `MOVEMENT`, `MISC`, `MULTIPLAYER`, `GAMEPLAY`,
+`INVENTORY`, `CREATIVE`, `SPECTATOR`, `DEBUG` und einer Factory
+`Category.register(Identifier)`.
+
+> Wir nutzen vorerst `Category.MISC`. Eine eigene Kategorie wäre möglich, aber
+> `Category.label()` baut den Übersetzungsschlüssel über
+> `id.toLanguageKey("key.category")`, während die Vanilla-Sprachdatei
+> `key.categories.*` (Plural) enthält. Welcher Schlüssel am Ende greift, ist ohne
+> Test im Spiel nicht eindeutig — deshalb keine Rate-Lösung. Kandidat für Phase 6.
 
 ---
 
@@ -205,13 +263,23 @@ das echte JAR gegenprüfen.
 
 ---
 
+### Kein Release für 26.2
+
+`cabaletta/baritone@26.2` existiert als Branch (HEAD `2991d92`, GitHub-Merge-Commit von
+leijurv vom 11.08.2026, PR #5076 von ZacSharp). Es gibt aber **keinen Tag und keinen
+Release** dafür — der neueste Tag im Repo ist `v1.15.0`. Es existiert also kein gebautes
+Artefakt von upstream.
+
+`dysnasia/baritone-26.2` hat dagegen `refs/tags/26.2` und eine Releases-Seite mit
+`baritone-26.2.jar`. **Deshalb: dieses JAR nach `libs/`.**
+
+---
+
 ## 6. Offene Punkte
 
-Diese lassen sich erst mit dem echten Minecraft-JAR auf dem Classpath abschließen:
-
-- Exakte Signatur von `Screen.extractRenderState` inklusive Sichtbarkeit
-  (`public` laut `ChannelScreen`, aber die Oberklasse ist nicht gegengelesen).
-- Scroll-Listen-Basisklasse in 26.2 (`ObjectSelectionList`-Äquivalent) — in
-  `ChannelScreen` wird ein eigener `ChannelList` verwendet.
-- `KeyMapping`-Konstruktor-Signatur in 26.2.
-- `LitematicaSchematic.getAreaSize(...)` und Blockanzahl-Ermittlung.
+- Scroll-Listen-Basisklasse für Phase 3 (`ObjectSelectionList`-Äquivalent) — noch nicht
+  im JAR nachgeschlagen.
+- `LitematicaSchematic.getAreaSize(...)` und die Ermittlung der Blockanzahl (Phase 2).
+- Eigene Keybind-Kategorie statt `Category.MISC` (siehe Abschnitt 3).
+- Der Keydruck selbst ist in dieser Umgebung nicht verifizierbar: der Client startet
+  headless unter Xvfb bis ins Hauptmenü, aber es gibt keine Tastatureingabe.
