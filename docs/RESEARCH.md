@@ -648,8 +648,11 @@ den `TaskScheduler` asynchron läuft. Siehe offene Punkte.
   `IBuilderProcess` bietet keine Fortschritts-Auskunft, deshalb ist der Balken
   unbestimmt (wanderndes Segment = „läuft"). Eine echte Prozentzahl bräuchte
   Litematicas `SchematicVerifier` (`SchematicPlacement.getSchematicVerifier()`),
-  der über den `TaskScheduler` asynchron läuft und eigene Chat-Meldungen erzeugt -
-  offene Entscheidung, ob uns das den Aufwand wert ist.
+  der über den `TaskScheduler` asynchron läuft und eigene Chat-Meldungen erzeugt.
+  **Entschieden: bleibt vorerst unbestimmt.** Ob die Async-Komplexität und die
+  fremden Chat-Meldungen tragbar sind, lässt sich erst im Spiel beurteilen —
+  vorgemerkt für *nach* dem ersten funktionierenden Release, ausdrücklich nicht
+  für Phase 6.
 - Der Material-Check läuft **beim Öffnen des Menüs**, nicht laufend. Ändert sich das
   Inventar, während das Menü offen ist, sind die Zeilen-Badges veraltet; der Klick
   prüft aber erneut, bevor er baut, kann also nicht auf veralteten Daten bauen.
@@ -657,3 +660,8 @@ den `TaskScheduler` asynchron läuft. Siehe offene Punkte.
   synchroner Pfad zählt den Bedarf für einen Bau von Null aus, ohne die Welt zu
   betrachten (siehe Abschnitt 8b).
 - Ob der Klick auf ✕ die richtige Trefferfläche hat, ist headless nicht prüfbar.
+- Der Keybind steht bewusst nicht in `config/autobuildgui.json`: Minecraft speichert
+  Tastenbelegungen selbst in `options.txt`, eine zweite Quelle würde die Änderung aus
+  dem Steuerungs-Menü beim nächsten Start überschreiben. Belegung daher über
+  Optionen &rarr; Steuerung. Damit ist der Phase-6-Punkt „Config (Keybind, ...)"
+  bewusst anders gelöst als wörtlich beschrieben.

@@ -2,6 +2,7 @@ package dev.aquaxs.autobuildgui.gui;
 
 import dev.aquaxs.autobuildgui.baritone.BaritoneAdapter;
 import dev.aquaxs.autobuildgui.baritone.BuildRequestResult;
+import dev.aquaxs.autobuildgui.config.AutobuildConfig;
 import dev.aquaxs.autobuildgui.litematica.LitematicaAdapter;
 import dev.aquaxs.autobuildgui.litematica.MaterialCheck;
 import dev.aquaxs.autobuildgui.litematica.PlacementInfo;
@@ -35,6 +36,7 @@ public class AutobuildScreen extends Screen {
 
 	private EditBox searchBox;
 	private PlacementListWidget placementList;
+	private int placementCount;
 
 	/**
 	 * Index des Placements, dessen Build wir gestartet haben. Baritone kennt selbst
@@ -82,12 +84,15 @@ public class AutobuildScreen extends Screen {
 		List<PlacementInfo> placements = LitematicaAdapter.getPlacements();
 		Map<Integer, MaterialCheck> checks = new LinkedHashMap<>();
 
-		for (PlacementInfo placement : placements) {
-			// Synchron und proportional zum Schematic-Volumen - vertretbar, weil es
-			// nur beim Öffnen des Menüs passiert, nicht pro Frame.
-			checks.put(placement.index(), LitematicaAdapter.checkMaterials(placement.index()));
+		if (AutobuildConfig.get().materialCheckEnabled()) {
+			for (PlacementInfo placement : placements) {
+				// Synchron und proportional zum Schematic-Volumen - vertretbar, weil es
+				// nur beim Öffnen des Menüs passiert, nicht pro Frame.
+				checks.put(placement.index(), LitematicaAdapter.checkMaterials(placement.index()));
+			}
 		}
 
+		this.placementCount = placements.size();
 		this.placementList.setActiveBuildIndex(activeBuildIndex);
 		this.placementList.setPlacements(placements, checks);
 	}
@@ -97,18 +102,35 @@ public class AutobuildScreen extends Screen {
 	}
 
 	private void onPlacementClicked(PlacementInfo placement) {
-		MaterialCheck check = LitematicaAdapter.checkMaterials(placement.index());
-
-		if (!check.isSatisfied()) {
-			sendError(Component.translatable("gui.autobuildgui.blocked_missing", check.missingBlocks()));
+		// Baritone bekommt nur den Index. Hat sich Litematicas Liste seit dem Öffnen
+		// geändert, zeigt derselbe Index auf ein anderes Bauwerk - lieber neu laden
+		// als das Falsche bauen.
+		if (!LitematicaAdapter.isStillCurrent(placement)) {
+			sendError(Component.translatable("gui.autobuildgui.placement_changed"));
+			refreshPlacements();
 			return;
+		}
+
+		if (AutobuildConfig.get().materialCheckEnabled()) {
+			MaterialCheck check = LitematicaAdapter.checkMaterials(placement.index());
+
+			if (!check.isSatisfied()) {
+				sendError(Component.translatable("gui.autobuildgui.blocked_missing", check.missingBlocks()));
+				return;
+			}
 		}
 
 		BuildRequestResult result = BaritoneAdapter.buildPlacement(placement.index());
 
 		if (result == BuildRequestResult.STARTED) {
 			activeBuildIndex = placement.index();
-			this.onClose();
+
+			if (AutobuildConfig.get().closeScreenOnBuildStart()) {
+				this.onClose();
+			} else {
+				refreshPlacements();
+			}
+
 			return;
 		}
 
@@ -141,9 +163,16 @@ public class AutobuildScreen extends Screen {
 		super.extractRenderState(graphics, mouseX, mouseY, delta);
 		graphics.centeredText(this.font, this.title, this.width / 2, TITLE_TOP_MARGIN, 0xFFFFFFFF);
 
+		Component notice = null;
+
 		if (!LitematicaAdapter.isAvailable()) {
-			Component message = Component.translatable("gui.autobuildgui.litematica_missing").withStyle(ChatFormatting.RED);
-			graphics.centeredText(this.font, message, this.width / 2, this.height / 2, 0xFFFFFFFF);
+			notice = Component.translatable("gui.autobuildgui.litematica_missing").withStyle(ChatFormatting.RED);
+		} else if (placementCount == 0) {
+			notice = Component.translatable("gui.autobuildgui.no_placements").withStyle(ChatFormatting.GRAY);
+		}
+
+		if (notice != null) {
+			graphics.centeredText(this.font, notice, this.width / 2, this.height / 2, 0xFFFFFFFF);
 		}
 	}
 

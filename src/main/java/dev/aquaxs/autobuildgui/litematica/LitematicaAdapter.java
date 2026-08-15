@@ -54,6 +54,30 @@ public final class LitematicaAdapter {
 	}
 
 	/**
+	 * Prüft, ob der in {@code info} festgehaltene Index in Litematicas Placement-Liste
+	 * noch auf dasselbe Placement zeigt.
+	 *
+	 * <p>Wichtig, weil Baritone nur den Index bekommt: ändert der Nutzer die Liste,
+	 * während unser Menü offen steht (Placement laden, löschen, umbenennen, verschieben),
+	 * zeigt derselbe Index anschließend auf ein anderes Bauwerk. Ohne diese Prüfung
+	 * würde ein Klick klaglos das Falsche bauen.
+	 */
+	public static boolean isStillCurrent(PlacementInfo info) {
+		if (!isAvailable()) {
+			return false;
+		}
+
+		List<SchematicPlacement> placements = DataManager.getSchematicPlacementManager().getAllSchematicsPlacements();
+
+		if (info.index() < 0 || info.index() >= placements.size()) {
+			return false;
+		}
+
+		SchematicPlacement placement = placements.get(info.index());
+		return placement.getName().equals(info.name()) && placement.getOrigin().equals(info.origin());
+	}
+
+	/**
 	 * Prüft synchron, ob das Inventar des Spielers für einen kompletten Bau reicht.
 	 *
 	 * <p>Nutzt Litematicas eigene Material-Ermittlung
