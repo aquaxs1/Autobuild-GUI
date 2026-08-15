@@ -2,5 +2,6 @@
 	"key.autobuildgui.open_menu": "Autobuild-Menü öffnen",
 	"gui.autobuildgui.title": "Autobuild",
 	"gui.autobuildgui.search": "Suchen...",
-	"gui.autobuildgui.litematica_missing": "Litematica nicht gefunden."
+	"gui.autobuildgui.litematica_missing": "Litematica nicht gefunden.",
+	"gui.autobuildgui.baritone_missing": "Baritone nicht gefunden."
 }

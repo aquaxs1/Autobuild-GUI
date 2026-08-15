@@ -1,6 +1,8 @@
 package dev.aquaxs.autobuildgui.gui;
 
+import dev.aquaxs.autobuildgui.baritone.BaritoneAdapter;
 import dev.aquaxs.autobuildgui.litematica.LitematicaAdapter;
+import dev.aquaxs.autobuildgui.litematica.PlacementInfo;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
@@ -9,8 +11,9 @@ import net.minecraft.network.chat.Component;
 
 /**
  * Das Autobuild-Menü: Suchfeld oben, darunter die scrollbare Liste der
- * geladenen Litematica-Placements. Klick auf eine Zeile selektiert sie nur -
- * der Build-Start kommt in Phase 4.
+ * geladenen Litematica-Placements. Klick auf eine Zeile startet über
+ * {@link BaritoneAdapter} den Build für genau dieses Placement und schließt
+ * den Screen. Fehlt Baritone, bleibt der Screen offen und zeigt eine Meldung.
  */
 public class AutobuildScreen extends Screen {
 	private static final int TITLE_TOP_MARGIN = 15;
@@ -47,11 +50,21 @@ public class AutobuildScreen extends Screen {
 		this.placementList = new PlacementListWidget(this.minecraft, contentWidth, listHeight, listTop, ROW_HEIGHT);
 		this.placementList.setX(SIDE_MARGIN);
 		this.placementList.setPlacements(LitematicaAdapter.getPlacements());
+		this.placementList.setOnPlacementClicked(this::onPlacementClicked);
 		this.addRenderableWidget(this.placementList);
 	}
 
 	private void onSearchChanged(String query) {
 		this.placementList.setFilter(query);
+	}
+
+	private void onPlacementClicked(PlacementInfo placement) {
+		if (BaritoneAdapter.buildPlacement(placement.index())) {
+			this.onClose();
+		} else {
+			Component message = Component.translatable("gui.autobuildgui.baritone_missing").withStyle(ChatFormatting.RED);
+			this.minecraft.player.sendSystemMessage(message);
+		}
 	}
 
 	@Override

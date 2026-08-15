@@ -6,23 +6,34 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractScrollArea;
 import net.minecraft.client.gui.components.ObjectSelectionList;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 /**
- * Scrollbare Liste der Litematica-Placements. Zeigt nur an - Klick auf eine
- * Zeile selektiert sie (Standardverhalten von {@link ObjectSelectionList}),
- * löst aber noch keinen Build aus. Das kommt in Phase 4.
+ * Scrollbare Liste der Litematica-Placements. Klick auf eine Zeile selektiert
+ * sie (Standardverhalten von {@link ObjectSelectionList}, über
+ * {@code setFocused} -&gt; {@code setSelected}) und meldet den Klick zusätzlich
+ * an {@link #setOnPlacementClicked(Consumer)}, damit der Screen den Build
+ * auslösen kann.
  */
 public class PlacementListWidget extends ObjectSelectionList<PlacementListWidget.Entry> {
 	private List<PlacementInfo> allPlacements = List.of();
 	private String filter = "";
+	private Consumer<PlacementInfo> onPlacementClicked = info -> {
+	};
 
 	public PlacementListWidget(Minecraft minecraft, int width, int height, int y, int itemHeight) {
 		super(minecraft, width, height, y, itemHeight);
+	}
+
+	public void setOnPlacementClicked(Consumer<PlacementInfo> listener) {
+		this.onPlacementClicked = listener;
 	}
 
 	public void setPlacements(List<PlacementInfo> placements) {
@@ -75,6 +86,15 @@ public class PlacementListWidget extends ObjectSelectionList<PlacementListWidget
 
 		public PlacementInfo info() {
 			return info;
+		}
+
+		@Override
+		public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+			if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+				PlacementListWidget.this.onPlacementClicked.accept(info);
+			}
+
+			return super.mouseClicked(event, doubleClick);
 		}
 
 		@Override

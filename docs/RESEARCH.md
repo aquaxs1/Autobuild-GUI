@@ -352,8 +352,18 @@ public int getContentX(); getContentY(); getContentRight(); getContentYMiddle();
 
 // net.minecraft.client.gui.components.ObjectSelectionList.Entry<E> (zusätzlich)
 public abstract Component getNarration();
-public boolean mouseClicked(MouseButtonEvent, boolean);   // schon implementiert: setSelected(this)
+public boolean mouseClicked(MouseButtonEvent, boolean);   // Default: nur "return true", KEIN eigener Select-Aufruf
 ```
+
+**Korrektur zu einer früheren Annahme hier:** `ObjectSelectionList.Entry.mouseClicked` selektiert
+NICHT selbst (`iconst_1; ireturn` laut Bytecode - reiner No-Op-Rückgabewert). Die Selektion
+läuft über einen anderen Pfad: `ContainerEventHandler.mouseClicked` (default-Methode, von der
+Liste geerbt) findet die angeklickte Entry über `getChildAt(x,y)`, ruft `entry.mouseClicked(...)`
+auf, und wenn das `true` liefert plus `entry.shouldTakeFocusAfterInteraction()`, ruft die Liste
+`this.setFocused(entry)` auf sich selbst auf. `AbstractSelectionList.setFocused(...)` ist
+überschrieben und ruft darin `setSelected(entry)` auf. Für Phase 4 heißt das: ein eigenes
+`Entry.mouseClicked`-Override, das `super.mouseClicked(...)` durchreicht (liefert weiterhin
+`true`), bricht die Selektion nicht - der Build-Trigger kommt einfach zusätzlich dazu.
 
 `ChannelList` (Fabric-API-Testmod, kompiliert gegen 26.2) bestätigt die exakte
 Parameterreihenfolge von `extractContent` 1:1:
@@ -369,6 +379,73 @@ statt der alten `(double x, double y, int button)` - `MouseButtonEvent` ist ein 
 `x()`, `y()`, `button()`. Klick-Weiterleitung an Entries läuft automatisch über
 `ContainerEventHandler.mouseClicked(...)` (default-Methode), solange die Entry
 `GuiEventListener` implementiert - kein eigener Dispatch-Code nötig.
+
+## 8. Baritone-JAR-Verifikation (Phase 4)
+
+Baritone-Quellbau aus dem `26.2`-Tag scheiterte an einer wachsenden Kette von Legacy-Hosts
+(Unimined selbst brauchte `maven.wagyourtail.xyz` + `launchermeta.mojang.com`, danach zusätzlich
+`files.betacraft.uk` und sechs weitere Kandidaten-Repos für `dev.babbaj:nether-pathfinder` -
+siehe Konversation). Statt die Freigabeliste beliebig weiter aufzublähen, hat der Nutzer ein
+reales `baritone-26.2.jar` aus seiner eigenen Meteor-Client-Installation hochgeladen.
+
+**Wichtig: dieses JAR stammt von `MeteorDevelopment/baritone` (in Meteor eingebettet), nicht von
+`dysnasia/baritone-26.2`.** Aus der Manifest-/`fabric.mod.json`-Prüfung:
+
+```
+Fabric-Minecraft-Version: 26.2
+Fabric-Loader-Version: 0.19.3
+mod id: "baritone-meteor"  (nicht "baritone")
+version: "26.2-SNAPSHOT"
+entrypoints: {}            (leer - initialisiert sich nicht selbst über Fabric)
+jars: [ "META-INF/jars/nether-pathfinder-1.6.jar" ]   (echtes Fabric-Jar-in-Jar, mit Loom gebaut)
+```
+
+Per `javap` gegen die echten `.class`-Dateien in diesem JAR verifiziert - alle Signaturen decken
+sich exakt mit dem `cabaletta/baritone@26.2`-Quellcode:
+
+```java
+// baritone.api.BaritoneAPI
+public static IBaritoneProvider getProvider();
+public static Settings getSettings();
+
+// baritone.api.IBaritoneProvider
+IBaritone getPrimaryBaritone();
+
+// baritone.api.IBaritone
+IBuilderProcess getBuilderProcess();
+
+// baritone.api.process.IBuilderProcess extends IBaritoneProcess
+void buildOpenLitematic(int);
+List<BlockState> getApproxPlaceable();   // Kandidat für Phase 5 Material-Check
+Optional<Integer> getMinLayer(); getMaxLayer();
+
+// baritone.api.process.IBaritoneProcess (Basisinterface, für Phase 5 relevant)
+boolean isActive();
+```
+
+`LitematicaCommand.execute(...)` wurde zusätzlich per Bytecode nachvollzogen (nicht nur der
+Quellcode): ruft intern weiterhin `baritone.getBuilderProcess().buildOpenLitematic(index - 1)`
+auf - die 0-basierte Index-Semantik ist bestätigt, nicht nur angenommen.
+
+### Obfuskierung außerhalb von `baritone.api.*`
+
+`baritone.utils.schematic.litematica.LitematicaHelper` ist in diesem JAR ProGuard-minifiziert:
+`isLitematicaPresent()` → `a()`, `hasLoadedSchematic(int)` → `a(int)`, `getSchematic(int)` →
+`a(int)` (zwei Overloads namens `a` mit identischem Parametertyp, nur unterschiedlichem
+Rückgabetyp - in Java-Quellcode nicht direkt aufrufbar, nur per Reflection). Betrifft uns nicht:
+unser eigener `LitematicaAdapter` (Phase 2) liest Litematica direkt, ohne je durch Baritones
+`LitematicaHelper` zu gehen. Das öffentliche `baritone.api.*`-Paket bleibt in beiden Distributionen
+(dysnasia-Standalone und Meteor-eingebettet) unverändert lesbar - vermutlich ein bewusster
+ProGuard-`-keep` für die öffentliche Library-API.
+
+### Zwei gültige Mod-IDs
+
+Da real im Umlauf sowohl `baritone` (dysnasia-Standalone, aus dem Quellcode verifiziert) als auch
+`baritone-meteor` (dieses JAR) vorkommen, prüft `BaritoneAdapter.isAvailable()` auf beide IDs.
+`BaritoneAPI`s statischer Initialisierer instanziiert `BaritoneProvider` beim ersten
+Klassenzugriff (nicht über Fabrics Entrypoint-Mechanismus) - das erklärt, warum das Meteor-JAR
+trotz leerem `"entrypoints": {}` funktioniert, sobald irgendein Code (auch unserer)
+`BaritoneAPI.getProvider()` aufruft.
 
 ### EditBox / Button (verifiziert, ungenutzt gebliebene Signaturen für später)
 
