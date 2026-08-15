@@ -53,6 +53,12 @@ public final class BaritoneAdapter {
 
 		try {
 			IBaritone baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
+
+			// Nur ein Build gleichzeitig: einen bereits laufenden sauber abbrechen,
+			// bevor der neue startet. buildOpenLitematic würde den Builder-Prozess
+			// zwar ohnehin neu belegen, aber ein laufender Pfad bliebe sonst aktiv.
+			baritone.getPathingBehavior().cancelEverything();
+
 			baritone.getBuilderProcess().buildOpenLitematic(placementIndex);
 			return BuildRequestResult.STARTED;
 		} catch (LinkageError error) {
@@ -65,6 +71,42 @@ public final class BaritoneAdapter {
 							+ "(vermutlich die standalone-Variante). Bitte die api- oder "
 							+ "unoptimized-Variante verwenden.", error);
 			return BuildRequestResult.BARITONE_WITHOUT_API;
+		}
+	}
+
+	/**
+	 * Bricht einen laufenden Build ab. Nutzt denselben Weg wie Baritones eigener
+	 * {@code #stop}-Befehl.
+	 *
+	 * @return {@code false}, wenn Baritone fehlt oder keine nutzbare API hat.
+	 */
+	public static boolean cancelBuild() {
+		if (!isAvailable()) {
+			return false;
+		}
+
+		try {
+			BaritoneAPI.getProvider().getPrimaryBaritone().getPathingBehavior().cancelEverything();
+			return true;
+		} catch (LinkageError error) {
+			AutobuildGui.LOGGER.error("Abbruch fehlgeschlagen: Baritone ohne baritone.api-Paket.", error);
+			return false;
+		}
+	}
+
+	/**
+	 * @return ob Baritones Builder-Prozess gerade aktiv ist. {@code false}, wenn
+	 * Baritone fehlt oder keine nutzbare API hat.
+	 */
+	public static boolean isBuildActive() {
+		if (!isAvailable()) {
+			return false;
+		}
+
+		try {
+			return BaritoneAPI.getProvider().getPrimaryBaritone().getBuilderProcess().isActive();
+		} catch (LinkageError error) {
+			return false;
 		}
 	}
 }

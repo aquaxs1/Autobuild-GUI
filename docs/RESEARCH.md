@@ -380,7 +380,37 @@ statt der alten `(double x, double y, int button)` - `MouseButtonEvent` ist ein 
 `ContainerEventHandler.mouseClicked(...)` (default-Methode), solange die Entry
 `GuiEventListener` implementiert - kein eigener Dispatch-Code nötig.
 
-## 8. Baritone-JAR-Verifikation (Phase 4)
+## 8. Baritone: Bezugsquelle und JAR-Verifikation (Phase 4)
+
+### Empfohlene Quelle: meteorclient.com
+
+**Das in `libs/` verwendete JAR stammt von der offiziellen Downloadseite
+`meteorclient.com`, Button „\*Baritone [26.2]".** Das ist der eigenständige
+MeteorDevelopment-Fork von Baritone — **kein** Bestandteil des vollen Meteor Clients;
+der Utility-Mod muss nicht installiert werden.
+
+| | |
+|---|---|
+| Quelle | `meteorclient.com`, Download-Button „\*Baritone [26.2]" |
+| In diese Session hochgeladen | 2026-08-15, 07:44 UTC |
+| SHA-256 | `8a2e7b71229005fd451e5f012f8b9c715e41531631a4a0a53c900a47cd852423` |
+| Größe | 4 852 460 Byte |
+| Mod-ID / Version | `baritone-meteor` / `26.2-SNAPSHOT` |
+| Eingebettet | `META-INF/jars/nether-pathfinder-1.6.jar` |
+
+Das genaue Download-Datum ist hier nicht unabhängig überprüfbar: `meteorclient.com` ist
+aus dieser Build-Umgebung nicht erreichbar (Egress-Policy), das JAR kam per Upload.
+Die Herkunftsangabe stammt vom Projekt-Owner; nachprüfbar ist der SHA-256 oben — die
+Datei in `libs/baritone-26.2.jar` ist byte-identisch mit dem Upload.
+
+Diese Quelle ist die **primäre Empfehlung für die README** (Phase 6), weil sie eine
+API-erhaltende Variante liefert (siehe unten).
+
+`dysnasia/baritone-26.2` bleibt als Alternative erwähnenswert, **aber**: dessen aktueller
+Release (Tag `26.2`) ist die `standalone`-Variante und hat keine nutzbare API — weder zum
+Kompilieren noch zur Laufzeit. Details unten.
+
+### JAR-Verifikation
 
 Baritone-Quellbau aus dem `26.2`-Tag scheiterte an einer wachsenden Kette von Legacy-Hosts
 (Unimined selbst brauchte `maven.wagyourtail.xyz` + `launchermeta.mojang.com`, danach zusätzlich
@@ -512,7 +542,7 @@ Klassenzugriff (nicht über Fabrics Entrypoint-Mechanismus) - das erklärt, waru
 trotz leerem `"entrypoints": {}` funktioniert, sobald irgendein Code (auch unserer)
 `BaritoneAPI.getProvider()` aufruft.
 
-### EditBox / Button (verifiziert, ungenutzt gebliebene Signaturen für später)
+### EditBox / Button (Phase 3, verifiziert)
 
 ```java
 public EditBox(Font, int x, int y, int width, int height, Component narrationMessage);
@@ -522,7 +552,85 @@ public void setHint(Component);
 public static Button.Builder Button.builder(Component, Button.OnPress);  // OnPress.onPress(Button)
 ```
 
-## 7. Offene Punkte
+## 8b. Material-Check, Abbruch und Fortschritt (Phase 5)
+
+### Material-Check: Litematica statt Baritone
+
+Baritones `IBuilderProcess.getApproxPlaceable()` ist laut eigenem Javadoc
+*"updated every tick, but only while the builder process is active"* — es liefert also
+erst Daten, **nachdem** der Build läuft, und taugt damit nicht für eine Prüfung *vor*
+dem Start. Für Phase 5 ist es unbrauchbar.
+
+Litematica hat dagegen einen synchronen Pfad. Wichtig: der offensichtliche Weg über
+`SchematicPlacement.getMaterialList()` ist es **nicht** — dessen
+`reCreateMaterialList()` plant nur einen `TaskCountBlocksPlacement` im `TaskScheduler`
+ein (asynchron über viele Ticks, mit eigener Chat-Meldung
+`litematica.message.scheduled_task_added`). Stattdessen:
+
+```java
+// fi.dy.masa.litematica.materials.MaterialListUtils - alles static und synchron
+public static List<MaterialListEntry> createMaterialListFor(LitematicaSchematic);
+public static void updateAvailableCounts(List<MaterialListEntry>, Player);
+
+// fi.dy.masa.litematica.materials.MaterialListEntry
+public ItemStack getStack();
+public int getCountTotal();
+public int getCountMissing();
+public int getCountAvailable();
+```
+
+Semantik aus dem Bytecode von `createMaterialListFor(schematic, regionNames)`:
+Es iteriert alle Sub-Region-Container (`getSubRegionContainer(name).get(x,y,z)` über das
+volle Volumen), zählt jeden `BlockState` in eine `countsTotal`-Map, übergibt dann
+`countsTotal.clone()` als *countsMissing* und eine **leere** Map als *countsMismatched*.
+
+Daraus folgt: **`countMissing == countTotal`** auf diesem Pfad. Es ist eine
+Frisch-Bau-Liste ohne Weltvergleich - „missing" heißt hier *nicht* „fehlt im Inventar".
+Der tatsächliche Fehlbestand ist:
+
+```java
+shortfall = max(0, entry.getCountTotal() - entry.getCountAvailable())
+```
+
+`updateAvailableCounts(...)` liest ausschließlich `Player.getInventory()` und setzt
+`countAvailable`. Zwei Konsequenzen:
+
+- **Keine Creative-Sonderbehandlung.** Ein Creative-Spieler mit leerem Inventar bekäme
+  „alles fehlt". Der Check muss im Creative-Modus übersprungen werden.
+- Kosten sind proportional zum Schematic-Volumen (reiner In-Memory-Durchlauf, kein
+  Weltzugriff). Für übliche Schematics unkritisch, bei sehr großen ein spürbarer
+  Einzel-Hitch im Client-Tick.
+
+### Abbruch
+
+```java
+// baritone.api.behavior.IPathingBehavior
+public abstract boolean cancelEverything();
+public abstract void forceCancel();
+public abstract boolean isPathing();
+
+// baritone.api.process.IBaritoneProcess (von IBuilderProcess geerbt)
+public abstract boolean isActive();
+```
+
+`cancelEverything()` ist der Weg, den auch Baritones eigener `#stop`-Befehl nutzt.
+
+### Fortschritt: keine Quelle in Baritone
+
+`IBuilderProcess` hat **keine** Fortschritts-Methode. Die vollständige Liste (aus dem
+API-erhaltenden JAR):
+
+```
+build×3, buildOpenSchematic, buildOpenLitematic, pause, isPaused, resume,
+clearArea, getApproxPlaceable, getMinLayer, getMaxLayer
+```
+
+Eine echte Prozentzahl („X von Y Blöcken gesetzt") ist daraus nicht ableitbar. Die
+einzige saubere Quelle wäre Litematicas `SchematicVerifier`
+(`SchematicPlacement.getSchematicVerifier()` / `hasVerifier()`), der aber ebenfalls über
+den `TaskScheduler` asynchron läuft. Siehe offene Punkte.
+
+## 9. Offene Punkte
 
 - Eigene Keybind-Kategorie statt `Category.MISC` (siehe Abschnitt 3).
 - Der Keydruck selbst ist in dieser Umgebung nicht verifizierbar: der Client startet
@@ -536,3 +644,16 @@ public static Button.Builder Button.builder(Component, Button.OnPress);  // OnPr
   Screenshot-Tooling in dieser Sandbox, um den Screen tatsächlich per Tastendruck zu
   öffnen und das Layout (Zeilenhöhe, Scrollbar-Abstand, Textkürzung) am Bildschirm zu
   sehen. Bitte im echten Spiel gegenprüfen, insbesondere mit langen Placement-Namen.
+- **Fortschrittsbalken zeigt keine Prozentzahl** (Phase 5). Baritones
+  `IBuilderProcess` bietet keine Fortschritts-Auskunft, deshalb ist der Balken
+  unbestimmt (wanderndes Segment = „läuft"). Eine echte Prozentzahl bräuchte
+  Litematicas `SchematicVerifier` (`SchematicPlacement.getSchematicVerifier()`),
+  der über den `TaskScheduler` asynchron läuft und eigene Chat-Meldungen erzeugt -
+  offene Entscheidung, ob uns das den Aufwand wert ist.
+- Der Material-Check läuft **beim Öffnen des Menüs**, nicht laufend. Ändert sich das
+  Inventar, während das Menü offen ist, sind die Zeilen-Badges veraltet; der Klick
+  prüft aber erneut, bevor er baut, kann also nicht auf veralteten Daten bauen.
+- Bei einem teilweise gebauten Placement ist der Fehlbestand pessimistisch: Litematicas
+  synchroner Pfad zählt den Bedarf für einen Bau von Null aus, ohne die Welt zu
+  betrachten (siehe Abschnitt 8b).
+- Ob der Klick auf ✕ die richtige Trefferfläche hat, ist headless nicht prüfbar.

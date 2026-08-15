@@ -3,6 +3,7 @@ package dev.aquaxs.autobuildgui.gui;
 import dev.aquaxs.autobuildgui.baritone.BaritoneAdapter;
 import dev.aquaxs.autobuildgui.baritone.BuildRequestResult;
 import dev.aquaxs.autobuildgui.litematica.LitematicaAdapter;
+import dev.aquaxs.autobuildgui.litematica.MaterialCheck;
 import dev.aquaxs.autobuildgui.litematica.PlacementInfo;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -10,11 +11,18 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
- * Das Autobuild-Menü: Suchfeld oben, darunter die scrollbare Liste der
- * geladenen Litematica-Placements. Klick auf eine Zeile startet über
- * {@link BaritoneAdapter} den Build für genau dieses Placement und schließt
- * den Screen. Fehlt Baritone, bleibt der Screen offen und zeigt eine Meldung.
+ * Das Autobuild-Menü: Suchfeld oben, darunter die scrollbare Liste der geladenen
+ * Litematica-Placements.
+ *
+ * <p>Beim Öffnen wird je Placement geprüft, ob das Inventar für einen kompletten Bau
+ * reicht. Zeilen mit Fehlbestand sind gesperrt. Klick auf eine freie Zeile startet über
+ * {@link BaritoneAdapter} den Build und schließt den Screen; das gerade gebaute
+ * Placement zeigt beim erneuten Öffnen eine Laufanzeige mit ✕ zum Abbrechen.
  */
 public class AutobuildScreen extends Screen {
 	private static final int TITLE_TOP_MARGIN = 15;
@@ -27,6 +35,13 @@ public class AutobuildScreen extends Screen {
 
 	private EditBox searchBox;
 	private PlacementListWidget placementList;
+
+	/**
+	 * Index des Placements, dessen Build wir gestartet haben. Baritone kennt selbst
+	 * nur "es baut gerade etwas", nicht welches Placement - deshalb merken wir uns das
+	 * hier. Statisch, damit es ein erneutes Öffnen des Screens überlebt.
+	 */
+	private static int activeBuildIndex = PlacementListWidget.NO_ACTIVE_BUILD;
 
 	public AutobuildScreen() {
 		super(Component.translatable("gui.autobuildgui.title"));
@@ -50,9 +65,31 @@ public class AutobuildScreen extends Screen {
 
 		this.placementList = new PlacementListWidget(this.minecraft, contentWidth, listHeight, listTop, ROW_HEIGHT);
 		this.placementList.setX(SIDE_MARGIN);
-		this.placementList.setPlacements(LitematicaAdapter.getPlacements());
 		this.placementList.setOnPlacementClicked(this::onPlacementClicked);
+		this.placementList.setOnCancelClicked(this::onCancelClicked);
 		this.addRenderableWidget(this.placementList);
+
+		refreshPlacements();
+	}
+
+	private void refreshPlacements() {
+		// Ist der Build inzwischen durch (oder von aussen abgebrochen), soll die Zeile
+		// nicht weiter als "läuft" erscheinen.
+		if (activeBuildIndex != PlacementListWidget.NO_ACTIVE_BUILD && !BaritoneAdapter.isBuildActive()) {
+			activeBuildIndex = PlacementListWidget.NO_ACTIVE_BUILD;
+		}
+
+		List<PlacementInfo> placements = LitematicaAdapter.getPlacements();
+		Map<Integer, MaterialCheck> checks = new LinkedHashMap<>();
+
+		for (PlacementInfo placement : placements) {
+			// Synchron und proportional zum Schematic-Volumen - vertretbar, weil es
+			// nur beim Öffnen des Menüs passiert, nicht pro Frame.
+			checks.put(placement.index(), LitematicaAdapter.checkMaterials(placement.index()));
+		}
+
+		this.placementList.setActiveBuildIndex(activeBuildIndex);
+		this.placementList.setPlacements(placements, checks);
 	}
 
 	private void onSearchChanged(String query) {
@@ -60,9 +97,17 @@ public class AutobuildScreen extends Screen {
 	}
 
 	private void onPlacementClicked(PlacementInfo placement) {
+		MaterialCheck check = LitematicaAdapter.checkMaterials(placement.index());
+
+		if (!check.isSatisfied()) {
+			sendError(Component.translatable("gui.autobuildgui.blocked_missing", check.missingBlocks()));
+			return;
+		}
+
 		BuildRequestResult result = BaritoneAdapter.buildPlacement(placement.index());
 
 		if (result == BuildRequestResult.STARTED) {
+			activeBuildIndex = placement.index();
 			this.onClose();
 			return;
 		}
@@ -73,8 +118,22 @@ public class AutobuildScreen extends Screen {
 			case STARTED -> throw new IllegalStateException("bereits oben behandelt");
 		};
 
-		this.minecraft.player.sendSystemMessage(
-				Component.translatable(translationKey).withStyle(ChatFormatting.RED));
+		sendError(Component.translatable(translationKey));
+	}
+
+	private void onCancelClicked(int placementIndex) {
+		if (BaritoneAdapter.cancelBuild()) {
+			activeBuildIndex = PlacementListWidget.NO_ACTIVE_BUILD;
+			refreshPlacements();
+		} else {
+			sendError(Component.translatable("gui.autobuildgui.cancel_failed"));
+		}
+	}
+
+	private void sendError(Component message) {
+		if (this.minecraft.player != null) {
+			this.minecraft.player.sendSystemMessage(message.copy().withStyle(ChatFormatting.RED));
+		}
 	}
 
 	@Override

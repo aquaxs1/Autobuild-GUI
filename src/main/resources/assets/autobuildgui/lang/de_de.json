@@ -2,6 +2,10 @@
 	"key.autobuildgui.open_menu": "Autobuild-Menü öffnen",
 	"gui.autobuildgui.title": "Autobuild",
 	"gui.autobuildgui.search": "Suchen...",
+	"gui.autobuildgui.status_ready": "Bereit",
+	"gui.autobuildgui.blocks_missing": "%s Blöcke fehlen",
+	"gui.autobuildgui.blocked_missing": "Bau nicht gestartet: %s Blöcke fehlen im Inventar.",
+	"gui.autobuildgui.cancel_failed": "Abbruch fehlgeschlagen.",
 	"gui.autobuildgui.litematica_missing": "Litematica nicht gefunden.",
 	"gui.autobuildgui.baritone_missing": "Baritone nicht gefunden.",
 	"gui.autobuildgui.baritone_without_api": "Diese Baritone-Variante hat kein API-Paket (standalone-Build). Bitte die api- oder unoptimized-Variante installieren."
