@@ -1,4 +1,6 @@
 {
 	"key.autobuildgui.open_menu": "Open Autobuild menu",
-	"gui.autobuildgui.title": "Autobuild"
+	"gui.autobuildgui.title": "Autobuild",
+	"gui.autobuildgui.search": "Search...",
+	"gui.autobuildgui.litematica_missing": "Litematica not found."
 }

@@ -327,13 +327,70 @@ Artefakt von upstream.
 
 ---
 
+## 6b. Scroll-Liste und Widgets (Phase 3, gegen echtes JAR verifiziert)
+
+Das frühere "offen"-Item ist geklärt: `ObjectSelectionList<E>` existiert in 26.2 unverändert
+im Prinzip, nur mit neuer Extract-Pipeline. Verifiziert per `javap` **und** an einem
+echten 26.2-Beispiel aus Fabric API selbst (`ChannelList`/`ChannelScreen`,
+`fabric-networking-api-v1/src/testmodClient/.../channeltest/`):
+
+```java
+// net.minecraft.client.gui.components.AbstractSelectionList<E extends Entry<E>>
+//   extends AbstractContainerWidget extends AbstractScrollArea
+protected AbstractSelectionList(Minecraft, int width, int height, int y, int itemHeight);
+// x ist IMMER 0 im Konstruktor (super(0, y, width, height, ...)) - eigene
+// Positionierung nur nachträglich über das geerbte AbstractWidget.setX(int).
+
+public int getRowWidth();      // default: fest 220, zentriert - für breitere
+                                // Zeilen überschreiben (Icon+Name+Badge braucht mehr)
+public int getRowLeft();       // = getX() + width/2 - getRowWidth()/2
+public static final int AbstractScrollArea.SCROLLBAR_WIDTH;  // = 6 (ConstantValue geprüft)
+
+// net.minecraft.client.gui.components.AbstractSelectionList.Entry<E>
+public abstract void extractContent(GuiGraphicsExtractor, int mouseX, int mouseY, boolean hovered, float tickDelta);
+public int getContentX(); getContentY(); getContentRight(); getContentYMiddle();  // schon Padding-bereinigt
+
+// net.minecraft.client.gui.components.ObjectSelectionList.Entry<E> (zusätzlich)
+public abstract Component getNarration();
+public boolean mouseClicked(MouseButtonEvent, boolean);   // schon implementiert: setSelected(this)
+```
+
+`ChannelList` (Fabric-API-Testmod, kompiliert gegen 26.2) bestätigt die exakte
+Parameterreihenfolge von `extractContent` 1:1:
+
+```java
+public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float tickDelta)
+```
+
+### Neues Input-Modell
+
+`GuiEventListener.mouseClicked` heißt jetzt `mouseClicked(MouseButtonEvent, boolean doubleClick)`
+statt der alten `(double x, double y, int button)` - `MouseButtonEvent` ist ein Record mit
+`x()`, `y()`, `button()`. Klick-Weiterleitung an Entries läuft automatisch über
+`ContainerEventHandler.mouseClicked(...)` (default-Methode), solange die Entry
+`GuiEventListener` implementiert - kein eigener Dispatch-Code nötig.
+
+### EditBox / Button (verifiziert, ungenutzt gebliebene Signaturen für später)
+
+```java
+public EditBox(Font, int x, int y, int width, int height, Component narrationMessage);
+public void setResponder(Consumer<String>);
+public void setHint(Component);
+
+public static Button.Builder Button.builder(Component, Button.OnPress);  // OnPress.onPress(Button)
+```
+
 ## 7. Offene Punkte
 
-- Scroll-Listen-Basisklasse für Phase 3 (`ObjectSelectionList`-Äquivalent) — noch nicht
-  im JAR nachgeschlagen.
 - Eigene Keybind-Kategorie statt `Category.MISC` (siehe Abschnitt 3).
 - Der Keydruck selbst ist in dieser Umgebung nicht verifizierbar: der Client startet
   headless unter Xvfb bis ins Hauptmenü, aber es gibt keine Tastatureingabe. Der
   `/autobuildgui list`-Command (Phase 2) läuft aus demselben Grund ungetestet im
   echten Chat, ist aber Brigadier-Code nach demselben Muster wie Fabric APIs eigener
   `ClientCommandTest`.
+- Phase 3 (`AutobuildScreen`, `PlacementListWidget`) ist gegen die echte 26.2-API
+  kompiliert und deckungsgleich mit einem echten Fabric-API-26.2-Testmod
+  (`ChannelList`/`ChannelScreen`), aber **visuell nicht geprüft**: kein `xdotool`/
+  Screenshot-Tooling in dieser Sandbox, um den Screen tatsächlich per Tastendruck zu
+  öffnen und das Layout (Zeilenhöhe, Scrollbar-Abstand, Textkürzung) am Bildschirm zu
+  sehen. Bitte im echten Spiel gegenprüfen, insbesondere mit langen Placement-Namen.
