@@ -12,12 +12,30 @@ base {
 repositories {
 	// Loom fuegt die Minecraft-/Fabric-Repositories selbst hinzu.
 	// Baritone hat kein publiziertes Maven-Artefakt fuer 26.2, deshalb libs/.
+	maven {
+		name = 'masa'
+		url = 'https://masa.dy.fi/maven/sakura-ryoko'
+		content { includeGroupAndSubgroups('fi.dy.masa') }
+	}
 }
 
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Litematica und malilib sind Soft-Dependencies: nur zur Compile-Zeit auf dem
+	// Classpath (fuer typsicheren Adapter-Code), zur Laufzeit prueft
+	// FabricLoader.isModLoaded(...), bevor die Klassen angefasst werden.
+	// conditional-mixin-fabric wird ausgeschlossen: es liegt nur auf
+	// maven.fallenbreath.me (nicht freigegeben) und wird fuer unseren
+	// Adapter-Code nicht gebraucht - Litematica selbst bringt es zur Laufzeit mit.
+	compileOnly("fi.dy.masa.litematica:litematica-fabric-${project.minecraft_version}:${project.litematica_version}") {
+		exclude group: 'me.fallenbreath', module: 'conditional-mixin-fabric'
+	}
+	compileOnly("fi.dy.masa.malilib:malilib-fabric-${project.minecraft_version}:${project.malilib_version}") {
+		exclude group: 'me.fallenbreath', module: 'conditional-mixin-fabric'
+	}
 
 	// Baritone ist eine Soft-Dependency: nur zur Compile-Zeit auf dem Classpath,
 	// zur Laufzeit liefert der separat installierte Baritone-Mod die Klassen.

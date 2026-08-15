@@ -34,6 +34,8 @@ public class AutobuildGuiClient implements ClientModInitializer {
 			}
 		});
 
+		AutobuildCommands.register();
+
 		AutobuildGui.LOGGER.info("Autobuild GUI initialisiert");
 	}
 }

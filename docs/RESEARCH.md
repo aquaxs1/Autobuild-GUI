@@ -263,7 +263,59 @@ das echte JAR gegenprüfen.
 
 ---
 
-### Kein Release für 26.2
+## 5b. Litematica/malilib als echte Compile-Dependency
+
+Anders als Baritone hat Litematica ein publiziertes Maven-Artefakt auf
+`masa.dy.fi/maven/sakura-ryoko`, deshalb `compileOnly` statt `libs/`-JAR.
+Verifiziert per `curl` gegen die echte `maven-metadata.xml`:
+
+| Artefakt | Veröffentlichte Version | Hinweis |
+|---|---|---|
+| `fi.dy.masa.litematica:litematica-fabric-26.2` | `0.28.4` | Quell-Branch (`26.2` auf GitHub) steht schon bei `0.28.5-sakura.11` — das ist unveröffentlichter Dev-Stand, nicht auf dem Maven. Wir bauen gegen die veröffentlichte `0.28.4`. |
+| `fi.dy.masa.malilib:malilib-fabric-26.2` | `0.29.2` | Aus der POM von `litematica-fabric-26.2:0.28.4` selbst gelesen (dort als Dependency deklariert) — nicht die neuere `0.29.3`, die dort nicht referenziert wird. |
+
+**`me.fallenbreath:conditional-mixin-fabric:0.6.4`** ist eine transitive Dependency von
+Litematica, aber nur auf `maven.fallenbreath.me` erreichbar — nicht auf der
+freigegebenen Host-Liste, und auf keinem erreichbaren Host gespiegelt (Maven Central:
+404). Da unser Adapter-Code diese Klasse nie anfasst (nur Litematica selbst braucht sie
+zur Laufzeit, die dann der separat installierte Litematica-Mod mitbringt), wird sie per
+Gradle `exclude` aus der Compile-Dependency herausgenommen:
+
+```groovy
+compileOnly("fi.dy.masa.litematica:litematica-fabric-${minecraft_version}:${litematica_version}") {
+    exclude group: 'me.fallenbreath', module: 'conditional-mixin-fabric'
+}
+```
+
+Gegen das echte gemappte `litematica-fabric-26.2-0.28.4.jar` per `javap` geprüft, alle
+Signaturen decken sich mit dem Quellcode-Klon:
+
+```java
+// fi.dy.masa.litematica.data.DataManager
+public static SchematicPlacementManager getSchematicPlacementManager();
+
+// fi.dy.masa.litematica.schematic.placement.SchematicPlacementManager
+public List<SchematicPlacement> getAllSchematicsPlacements();
+
+// fi.dy.masa.litematica.schematic.placement.SchematicPlacement
+public String getName();
+public LitematicaSchematic getSchematic();
+public BlockPos getOrigin();
+
+// fi.dy.masa.litematica.schematic.LitematicaSchematic
+public SchematicMetadata getMetadata();
+
+// fi.dy.masa.litematica.schematic.SchematicMetadata
+public String getName();
+public int getTotalBlocks();
+public Vec3i getEnclosingSize();
+```
+
+`SchematicMetadata` liefert Name, Größe und Blockanzahl in einem Aufruf — das ist die
+kanonische, von Litematica selbst für Anzeigezwecke genutzte Quelle (nicht aus der
+Geometrie neu berechnet).
+
+## 6. Baritone: kein Release für 26.2 (relevant für Phase 4)
 
 `cabaletta/baritone@26.2` existiert als Branch (HEAD `2991d92`, GitHub-Merge-Commit von
 leijurv vom 11.08.2026, PR #5076 von ZacSharp). Es gibt aber **keinen Tag und keinen
@@ -275,11 +327,13 @@ Artefakt von upstream.
 
 ---
 
-## 6. Offene Punkte
+## 7. Offene Punkte
 
 - Scroll-Listen-Basisklasse für Phase 3 (`ObjectSelectionList`-Äquivalent) — noch nicht
   im JAR nachgeschlagen.
-- `LitematicaSchematic.getAreaSize(...)` und die Ermittlung der Blockanzahl (Phase 2).
 - Eigene Keybind-Kategorie statt `Category.MISC` (siehe Abschnitt 3).
 - Der Keydruck selbst ist in dieser Umgebung nicht verifizierbar: der Client startet
-  headless unter Xvfb bis ins Hauptmenü, aber es gibt keine Tastatureingabe.
+  headless unter Xvfb bis ins Hauptmenü, aber es gibt keine Tastatureingabe. Der
+  `/autobuildgui list`-Command (Phase 2) läuft aus demselben Grund ungetestet im
+  echten Chat, ist aber Brigadier-Code nach demselben Muster wie Fabric APIs eigener
+  `ClientCommandTest`.
