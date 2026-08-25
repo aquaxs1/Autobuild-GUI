@@ -21,8 +21,8 @@ public class AutobuildGuiClient implements ClientModInitializer {
 		));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
-			// consumeClick() leert die Warteschlange, deshalb while statt if:
-			// mehrfaches Druecken innerhalb eines Ticks soll das Menue nicht mehrfach oeffnen.
+			// consumeClick() drains the queue, hence while rather than if:
+			// several presses within one tick must not open the menu several times.
 			boolean pressed = false;
 
 			while (openMenuKey.consumeClick()) {
