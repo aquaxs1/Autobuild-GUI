@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autobuild GUI</title>
+<meta name="description" content="Client-seitiger Fabric-Mod für Minecraft 26.2: Hotkey drücken, Litematica-Placement anklicken, Baritone baut es. Download als .jar.">
+<meta property="og:title" content="Autobuild GUI">
+<meta property="og:description" content="Ein Hotkey, eine Liste, ein Klick — und Baritone baut das Litematica-Schematic, das du ausgewählt hast.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500&family=Pixelify+Sans:wght@400;500;700&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230F1211'/%3E%3Crect x='2' y='2' width='12' height='12' fill='%238B8B8B'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%233F3F3F'/%3E%3Crect x='4' y='7' width='8' height='2' fill='%234CAF50'/%3E%3C/svg%3E">
+<style>
+/* ---- tokens: die Farben stammen 1:1 aus PlacementListWidget.java ---- */
+:root{
+  --void:#0F1211;
+  --panel:#171B19;
+  --panel-2:#1D2220;
+  --sunk:#0B0D0C;
+  --stone:#8B8B8B;
+  --stone-dim:#3F3F3F;
+  --line:#2A302C;
+  --text:#E4E7E3;
+  --muted:#949E97;
+  --grass:#4CAF50;
+  --grass-hi:#79D98A;
+  --redstone:#FF5555;
+
+  --display:"IBM Plex Sans Condensed","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --pixel:"Pixelify Sans",ui-monospace,SFMono-Regular,Menlo,monospace;
+
+  --wrap:1140px;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background-color:var(--void);
+  /* Blaupausen-Raster: das Schematic-Gitter hinter allem */
+  background-image:
+    linear-gradient(rgba(139,139,139,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(139,139,139,.045) 1px,transparent 1px);
+  background-size:32px 32px;
+  color:var(--text);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%}
+a{color:var(--grass-hi);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--grass);outline-offset:2px}
+
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.08;text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(2.6rem,7vw,4.4rem)}
+h2{font-size:clamp(1.75rem,3.6vw,2.5rem)}
+h3{font-size:1.05rem;font-weight:600;letter-spacing:0}
+p{margin:0}
+
+.wrap{width:100%;max-width:var(--wrap);margin-inline:auto;padding-inline:24px}
+
+/* ---- Widget-Chrome: 1px Stein-Rand über dunkler Füllung, wie im Spiel ---- */
+.widget{border:1px solid var(--line);background:var(--panel)}
+
+.eyebrow{
+  font-family:var(--mono);font-size:.72rem;font-weight:500;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:10px;margin-bottom:18px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ---------------- Kopfzeile ---------------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:rgba(15,18,17,.88);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .wrap{display:flex;align-items:center;gap:24px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:1.05rem;color:var(--text);letter-spacing:.01em}
+.topbar .brand{margin-right:auto}
+.brand:hover{text-decoration:none}
+.brand .cube{width:16px;height:16px;background:var(--stone);position:relative;flex:none}
+.brand .cube::after{content:"";position:absolute;inset:1px;background:var(--stone-dim)}
+.brand .cube::before{content:"";position:absolute;left:2px;right:2px;top:7px;height:2px;background:var(--grass);z-index:1}
+.topnav{display:flex;gap:22px;font-family:var(--mono);font-size:.8rem}
+.topnav a{color:var(--muted)}
+.topnav a:hover{color:var(--text);text-decoration:none}
+@media (max-width:860px){.topnav{display:none}}
+
+/* ---------------- Buttons ---------------- */
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--mono);font-size:.85rem;font-weight:500;
+  padding:11px 18px;border:1px solid var(--line);
+  background:var(--panel-2);color:var(--text);
+  transition:border-color .15s ease,background .15s ease,transform .15s ease;
+}
+.btn:hover{text-decoration:none;border-color:var(--stone);background:#242a27}
+.btn:active{transform:translateY(1px)}
+.btn-primary{
+  background:var(--grass);border-color:var(--grass);color:#08130B;font-weight:600;
+  box-shadow:0 0 0 0 rgba(76,175,80,.45);
+}
+.btn-primary:hover{background:var(--grass-hi);border-color:var(--grass-hi);box-shadow:0 0 26px -6px rgba(76,175,80,.55)}
+.btn-primary .sz{opacity:.7;font-weight:400}
+
+/* ---------------- Hero ---------------- */
+.hero{padding:clamp(48px,8vw,96px) 0 clamp(56px,7vw,88px);border-bottom:1px solid var(--line)}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.02fr);gap:clamp(32px,5vw,64px);align-items:center}
+@media (max-width:940px){.hero-grid{grid-template-columns:minmax(0,1fr)}}
+.tagline{
+  font-family:var(--mono);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--grass-hi);margin-bottom:20px;
+}
+.hero h1{margin-bottom:20px}
+.hero h1 .thin{display:block;font-weight:600;color:var(--muted);font-size:.34em;letter-spacing:.02em;margin-top:14px;line-height:1.4;max-width:34ch}
+.lede{font-size:1.1rem;color:var(--muted);max-width:52ch;margin-bottom:28px}
+.lede strong{color:var(--text);font-weight:500}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:26px}
+.specs{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  font-family:var(--mono);font-size:.72rem;color:var(--muted);
+  border:1px solid var(--line);padding:5px 10px;background:var(--panel);
+}
+.chip b{color:var(--text);font-weight:500}
+
+/* ---------------- Der Menü-Nachbau ---------------- */
+.screen{
+  border:1px solid var(--line);
+  font-variant-ligatures:none;font-feature-settings:"liga" 0,"clig" 0;
+  background:linear-gradient(180deg,#12100E 0%,#0C0F0D 60%,#0A0C0B 100%);
+  padding:16px;position:relative;
+  box-shadow:0 24px 60px -30px #000;
+}
+.screen::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 0%,rgba(76,175,80,.07),transparent 60%);
+}
+.screen-title{
+  font-family:var(--pixel);font-size:1.15rem;font-weight:700;text-align:center;
+  color:#fff;text-shadow:2px 2px 0 #3F3F3F;margin:6px 0 14px;
+}
+.mc-input{
+  border:1px solid var(--stone);background:var(--sunk);
+  padding:8px 9px;margin-bottom:8px;
+  font-family:var(--pixel);font-size:.95rem;color:#6E756F;
+  display:flex;align-items:center;gap:2px;
+}
+.mc-input .caret{width:1px;height:.9em;background:#fff;margin-right:4px;animation:blink 1.06s steps(1,end) infinite}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+.rows{display:flex;flex-direction:column;gap:2px}
+.row{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 9px;border:1px solid transparent;background:rgba(255,255,255,.02);
+}
+.row.hover{background:rgba(255,255,255,.07);border-color:var(--stone)}
+.row.blocked{opacity:.58}
+.row .icon{width:24px;height:24px;flex:none;background:var(--stone);position:relative}
+.row .icon::after{content:"";position:absolute;inset:1px;background:var(--stone-dim)}
+.row .icon i{position:absolute;inset:5px;z-index:1;display:block;background:currentColor;opacity:.85}
+.row .meta{min-width:0;flex:1;display:flex;flex-direction:column}
+.row .name{font-family:var(--pixel);font-size:.98rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:1px 1px 0 rgba(0,0,0,.6)}
+.row .sub{font-family:var(--pixel);font-size:.84rem;color:#A0A5A1;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .status{font-family:var(--pixel);font-size:.86rem;color:#A0A5A1;flex:none;align-self:flex-start;margin-top:1px}
+.row .status.miss{color:var(--redstone)}
+.running{display:flex;align-items:center;gap:6px;flex:none}
+.bar{width:78px;height:9px;border:1px solid var(--stone);background:#1E1E1E;overflow:hidden;position:relative}
+.bar span{position:absolute;top:0;bottom:0;width:35%;background:var(--grass);animation:sweep 1.4s linear infinite}
+@keyframes sweep{from{left:-35%}to{left:100%}}
+.x{width:13px;height:13px;position:relative;flex:none}
+.x::before,.x::after{content:"";position:absolute;left:0;top:6px;width:13px;height:1.6px;background:var(--redstone)}
+.x::before{transform:rotate(45deg)}
+.x::after{transform:rotate(-45deg)}
+.screen-foot{
+  display:flex;justify-content:space-between;gap:12px;
+  font-family:var(--mono);font-size:.68rem;color:var(--muted);
+  margin-top:14px;padding-top:10px;border-top:1px solid rgba(139,139,139,.18);
+}
+kbd{
+  font-family:var(--mono);font-size:.72rem;color:var(--text);
+  border:1px solid var(--stone);border-bottom-width:2px;background:var(--panel-2);
+  padding:1px 6px;
+}
+@media (prefers-reduced-motion:reduce){
+  .bar span{animation:none;left:32%}
+  .mc-input .caret{animation:none}
+}
+
+/* ---------------- Abschnitte ---------------- */
+section{padding:clamp(56px,8vw,96px) 0;border-bottom:1px solid var(--line)}
+.sec-head{max-width:62ch;margin-bottom:44px}
+.sec-head p{color:var(--muted);margin-top:14px;font-size:1.03rem}
+
+.features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+@media (max-width:900px){.features{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.features{grid-template-columns:minmax(0,1fr)}}
+.feature{background:var(--panel);padding:26px 24px 28px;display:flex;flex-direction:column;gap:10px}
+.feature .tag{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--grass)}
+.feature p{color:var(--muted);font-size:.95rem}
+.feature p em{font-style:normal;color:var(--text)}
+
+/* Pipeline */
+.pipe{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:14px;align-items:stretch;margin-bottom:36px}
+@media (max-width:820px){.pipe{grid-template-columns:minmax(0,1fr);gap:10px}.pipe .arrow{transform:rotate(90deg);justify-self:start;margin-left:24px}}
+.step{border:1px solid var(--line);background:var(--panel);padding:20px}
+.step .who{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.step.self{border-color:var(--grass);box-shadow:inset 0 0 0 1px rgba(76,175,80,.18)}
+.step.self .who{color:var(--grass)}
+.step b{font-family:var(--display);font-size:1.15rem;font-weight:700;display:block;margin-bottom:6px}
+.step p{color:var(--muted);font-size:.92rem}
+.arrow{display:flex;align-items:center;color:var(--stone);font-family:var(--mono);font-size:1.1rem}
+
+.anatomy{display:flex;flex-direction:column;gap:clamp(24px,4vw,40px)}
+.legend{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:clamp(24px,4vw,48px);border-bottom:1px solid var(--line)}
+@media (max-width:760px){.legend{grid-template-columns:minmax(0,1fr)}}
+.legend li{display:flex;gap:16px;padding:16px 0;border-top:1px solid var(--line)}
+.legend .swatch{width:34px;flex:none;display:flex;align-items:center;justify-content:center;padding-top:3px}
+.legend h3{margin-bottom:3px}
+.legend p{color:var(--muted);font-size:.92rem}
+.sw-icon{width:20px;height:20px;background:var(--stone);position:relative}
+.sw-icon::after{content:"";position:absolute;inset:1px;background:var(--stone-dim)}
+.sw-bar{width:30px;height:9px;border:1px solid var(--stone);background:#1E1E1E;position:relative;overflow:hidden}
+.sw-bar::after{content:"";position:absolute;inset:1px;right:60%;background:var(--grass)}
+.sw-text{font-family:var(--pixel);font-variant-ligatures:none;font-size:.78rem;color:var(--redstone);text-align:center;line-height:1.3}
+.sw-cursor{width:14px;height:18px;fill:#fff}
+
+/* Tabelle */
+.table-scroll{overflow-x:auto;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:.94rem}
+th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--line)}
+thead th{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--panel-2)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:nth-child(odd){background:rgba(255,255,255,.012)}
+td.v{font-family:var(--mono);font-size:.85rem;color:var(--muted);white-space:nowrap}
+td .req{font-family:var(--mono);font-size:.75rem;color:var(--grass)}
+td .opt{font-family:var(--mono);font-size:.75rem;color:var(--muted)}
+
+/* Warnung */
+.warn{border:1px solid var(--redstone);background:rgba(255,85,85,.06);padding:22px 24px;margin:32px 0}
+.warn .lbl{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--redstone);margin-bottom:10px}
+.warn h3{margin-bottom:8px}
+.warn p{color:var(--muted);font-size:.95rem;max-width:70ch}
+.warn p + p{margin-top:10px}
+.warn code,.warn strong{color:var(--text)}
+code{font-family:var(--mono);font-size:.88em;background:var(--panel-2);border:1px solid var(--line);padding:1px 5px}
+
+/* Schritte */
+.steps{counter-reset:s;list-style:none;margin:32px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+@media (max-width:700px){.steps{grid-template-columns:minmax(0,1fr)}}
+.steps li{counter-increment:s;background:var(--panel);padding:22px 24px}
+.steps li::before{content:counter(s,decimal-leading-zero);font-family:var(--mono);font-size:.75rem;color:var(--grass);display:block;margin-bottom:8px;letter-spacing:.1em}
+.steps li p{color:var(--muted);font-size:.94rem;margin-top:6px}
+.steps li b{font-family:var(--display);font-size:1.05rem}
+
+.notes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+@media (max-width:820px){.notes{grid-template-columns:minmax(0,1fr);gap:20px}}
+.notes li{border-left:2px solid var(--stone-dim);padding-left:18px}
+.notes h3{margin-bottom:6px}
+.notes p{color:var(--muted);font-size:.93rem}
+
+/* Download */
+.download{background:var(--panel);border:1px solid var(--line);padding:clamp(28px,4vw,44px);display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:clamp(24px,4vw,48px);align-items:center}
+@media (max-width:820px){.download{grid-template-columns:minmax(0,1fr)}}
+.download h2{margin-bottom:14px}
+.download > div > p{color:var(--muted);max-width:50ch}
+.file{border:1px solid var(--line);background:var(--sunk);padding:20px}
+.file .fname{font-family:var(--mono);font-size:.92rem;color:var(--text);word-break:break-all;margin-bottom:14px}
+.file dl{margin:0 0 18px;display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-family:var(--mono);font-size:.76rem}
+.file dt{color:var(--muted)}
+.file dd{margin:0;color:var(--text);text-align:right}
+.file .hash{font-family:var(--mono);font-size:.66rem;color:var(--muted);word-break:break-all;line-height:1.5;border-top:1px solid var(--line);padding-top:12px;margin-top:14px}
+
+/* Nutzungsbedingungen */
+.terms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+@media (max-width:760px){.terms{grid-template-columns:minmax(0,1fr)}}
+.terms > div{background:var(--panel);padding:24px}
+.terms h3{margin-bottom:8px}
+.terms p{color:var(--muted);font-size:.92rem}
+.terms p + p{margin-top:8px}
+.stamp{font-family:var(--mono);font-size:.74rem;color:var(--muted);margin-top:18px}
+
+/* Fußzeile */
+footer{padding:clamp(48px,6vw,72px) 0 32px}
+.fgrid{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:32px}
+@media (max-width:860px){.fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.fgrid{grid-template-columns:minmax(0,1fr)}}
+.fgrid h4{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 16px;font-weight:500}
+.fgrid ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;font-size:.92rem}
+.fgrid ul a{color:var(--text)}
+.fgrid ul a:hover{color:var(--grass-hi)}
+.fabout p{color:var(--muted);font-size:.92rem;max-width:34ch;margin-top:14px}
+.fbottom{margin-top:44px;padding-top:22px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.fbottom a{color:var(--muted)}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:16px;top:12px;z-index:60;background:var(--grass);color:#08130B;padding:8px 14px}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Zum Inhalt springen</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="cube"></span>Autobuild GUI</a>
+    <nav class="topnav">
+      <a href="#features">Funktionen</a>
+      <a href="#interface">Interface</a>
+      <a href="#installation">Installation</a>
+      <a href="https://github.com/aquaxs1/Autobuild-GUI">GitHub</a>
+    </nav>
+    <a class="btn btn-primary" href="https://github.com/aquaxs1/Autobuild-GUI/releases/download/v0.1.0/autobuild-gui-0.1.0.jar">.jar laden</a>
+  </div>
+</header>
+
+<main id="main">
+<div id="top"></div>
+
+<!-- ============ HERO ============ -->
+<div class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="tagline">Fabric · Minecraft 26.2 · Client-seitig</p>
+      <h1>Autobuild&nbsp;GUI
+        <span class="thin">Litematica-Placement anklicken. Baritone baut es.</span>
+      </h1>
+      <p class="lede">Kein Befehl tippen, kein Index raten: <kbd>B</kbd> öffnet eine Liste aller geladenen Schematics — <strong>ein Klick startet den Bau</strong>. Der Mod ist reines Menü, das Bauen macht Baritone.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/aquaxs1/Autobuild-GUI/releases/download/v0.1.0/autobuild-gui-0.1.0.jar">Download .jar <span class="sz">· 28&nbsp;KB</span></a>
+        <a class="btn" href="https://github.com/aquaxs1/Autobuild-GUI">Quellcode ansehen</a>
+      </div>
+      <div class="specs">
+        <span class="chip">Version <b>0.1.0</b></span>
+        <span class="chip">Minecraft <b>26.2</b></span>
+        <span class="chip">Java <b>25</b></span>
+        <span class="chip">Lizenz <b>MIT</b></span>
+      </div>
+    </div>
+
+    <!-- Nachbau des Menüs, wie der Mod es zeichnet -->
+    <div class="screen" role="img" aria-label="Nachbau des Autobuild-Menüs: Suchfeld und vier Placement-Zeilen. Cathedral_v3 ist bereit, Sky_Base_final wird gerade gebaut und zeigt einen laufenden Balken mit Abbrechen-Kreuz, Redstone_Farm_8k ist gesperrt weil 1284 Blöcke fehlen, Bridge_North ist bereit.">
+      <p class="screen-title">Autobuild</p>
+      <div class="mc-input"><span class="caret"></span>Suchen...</div>
+      <div class="rows">
+        <div class="row hover">
+          <span class="icon" style="color:#C9B08A"><i></i></span>
+          <span class="meta">
+            <span class="name">Cathedral_v3</span>
+            <span class="sub">64x48x39 - 218.406 Blöcke</span>
+          </span>
+          <span class="status">Bereit</span>
+        </div>
+        <div class="row">
+          <span class="icon" style="color:#6FA8DC"><i></i></span>
+          <span class="meta">
+            <span class="name">Sky_Base_final</span>
+            <span class="sub">32x18x24 - 12.480 Blöcke</span>
+          </span>
+          <span class="running"><span class="bar"><span></span></span><span class="x"></span></span>
+        </div>
+        <div class="row blocked">
+          <span class="icon" style="color:#B4413C"><i></i></span>
+          <span class="meta">
+            <span class="name">Redstone_Farm_8k</span>
+            <span class="sub">96x22x96 - 41.020 Blöcke</span>
+          </span>
+          <span class="status miss">1.284 Blöcke fehlen</span>
+        </div>
+        <div class="row">
+          <span class="icon" style="color:#8E8E8E"><i></i></span>
+          <span class="meta">
+            <span class="name">Bridge_North</span>
+            <span class="sub">128x9x7 - 6.912 Blöcke</span>
+          </span>
+          <span class="status">Bereit</span>
+        </div>
+      </div>
+      <div class="screen-foot">
+        <span>Menü öffnen: <kbd>B</kbd></span>
+        <span>Live-Nachbau des Interfaces</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FUNKTIONEN ============ -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Was der Mod kann</p>
+      <h2>Sechs Dinge, mehr nicht.</h2>
+      <p>Autobuild GUI ist bewusst klein: Es liest, was Litematica geladen hat, prüft dein Inventar und gibt den Auftrag an Baritone weiter. Alles andere machen die beiden selbst.</p>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <span class="tag">Hotkey</span>
+        <h3>Menü auf Tastendruck</h3>
+        <p><kbd>B</kbd> öffnet die Liste — mitten im Spiel, ohne Chat-Befehl. Die Taste ist frei belegbar unter <em>Optionen → Steuerung</em>.</p>
+      </div>
+      <div class="feature">
+        <span class="tag">Übersicht</span>
+        <h3>Alle Placements auf einen Blick</h3>
+        <p>Jede Zeile zeigt Name, Maße und Blockanzahl. Das Suchfeld filtert live nach Namen — auch bei zwanzig geladenen Schematics.</p>
+      </div>
+      <div class="feature">
+        <span class="tag">Material-Check</span>
+        <h3>Sagt vorher, was fehlt</h3>
+        <p>Reicht das Inventar nicht, steht <em>„N Blöcke fehlen"</em> in der Zeile und der Klick ist gesperrt — statt mittendrin steckenzubleiben.</p>
+      </div>
+      <div class="feature">
+        <span class="tag">Ein Klick</span>
+        <h3>Klick startet den Bau</h3>
+        <p>Baritone bekommt genau dieses Placement, das Menü schließt sich. Keine Index-Rechnerei, kein <code>#build</code> mit Koordinaten.</p>
+      </div>
+      <div class="feature">
+        <span class="tag">Kontrolle</span>
+        <h3>Laufanzeige mit Abbruch</h3>
+        <p>Das laufende Placement zeigt beim erneuten Öffnen einen Balken und ein rotes <em>✕</em>. Es läuft immer nur ein Build; ein neuer bricht den alten sauber ab.</p>
+      </div>
+      <div class="feature">
+        <span class="tag">Robust</span>
+        <h3>Stürzt nicht ab, wenn was fehlt</h3>
+        <p>Ohne Litematica oder Baritone öffnet sich das Menü trotzdem und sagt in Klartext, welcher Mod fehlt. Beide sind echte Soft-Dependencies.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INTERFACE ============ -->
+<section id="interface">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">So funktioniert es</p>
+      <h2>Drei Mods, eine Kette.</h2>
+      <p>Autobuild GUI platziert keinen einzigen Block selbst. Es ist die Schicht dazwischen — Menü und Klebstoff.</p>
+    </div>
+
+    <div class="pipe">
+      <div class="step">
+        <p class="who">Litematica</p>
+        <b>Lädt das Schematic</b>
+        <p>Du lädst deine <code>.litematic</code>-Datei wie immer und setzt das Placement in die Welt.</p>
+      </div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="step self">
+        <p class="who">Autobuild GUI</p>
+        <b>Zeigt die Liste, du klickst</b>
+        <p><kbd>B</kbd> drücken, Zeile auswählen. Vorher prüft der Mod noch dein Inventar.</p>
+      </div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="step">
+        <p class="who">Baritone</p>
+        <b>Läuft und baut</b>
+        <p>Pathfinding und Blockplatzierung macht komplett Baritone — bis du abbrichst oder es fertig ist.</p>
+      </div>
+    </div>
+
+    <div class="anatomy">
+      <div class="screen">
+        <p class="screen-title">Anatomie einer Zeile</p>
+        <div class="rows">
+          <div class="row hover" style="padding:12px 10px">
+            <span class="icon" style="color:#6FA8DC;width:30px;height:30px"><i></i></span>
+            <span class="meta">
+              <span class="name" style="font-size:1.05rem">Sky_Base_final</span>
+              <span class="sub" style="font-size:.88rem">32x18x24 - 12.480 Blöcke</span>
+            </span>
+            <span class="running"><span class="bar"><span></span></span><span class="x"></span></span>
+          </div>
+        </div>
+        <div class="screen-foot"><span>Zeilenhöhe 28&nbsp;px</span><span>Balken 1,4&nbsp;s pro Runde</span></div>
+      </div>
+
+      <ul class="legend">
+        <li>
+          <span class="swatch"><span class="sw-icon"></span></span>
+          <div>
+            <h3>Name, Maße, Blockanzahl</h3>
+            <p>Links das Placement-Icon, daneben der Name und darunter grau <code>32x18x24 - 12.480 Blöcke</code>. Genug, um zwei ähnliche Schematics auseinanderzuhalten.</p>
+          </div>
+        </li>
+        <li>
+          <span class="swatch"><span class="sw-bar"></span></span>
+          <div>
+            <h3>Laufbalken statt erfundener Prozente</h3>
+            <p>Der Balken wandert, statt eine Zahl zu zeigen: Baritones Builder-API meldet keinen Fortschritt. Eine ausgedachte Prozentzahl wäre schlechter als gar keine.</p>
+          </div>
+        </li>
+        <li>
+          <span class="swatch"><span class="sw-text">1.284<br>fehlen</span></span>
+          <div>
+            <h3>Rote Zeile = gesperrt</h3>
+            <p>Fehlt Material, wird die Zeile blockiert statt gestartet. Der Klick prüft nochmal neu — nie wird auf veralteten Daten gebaut.</p>
+          </div>
+        </li>
+        <li>
+          <span class="swatch"><svg class="sw-cursor" viewBox="0 0 12 16" aria-hidden="true"><path d="M0 0 L0 12 L3 9 L5.5 15 L7.5 14 L5 8.5 L9 8.5 Z"/></svg></span>
+          <div>
+            <h3>Ein Klick, kein Dialog</h3>
+            <p>Zeile anklicken, Menü zu, Baritone läuft. Erneut <kbd>B</kbd> drücken zeigt den laufenden Build mit <em>✕</em> zum Abbrechen.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INSTALLATION ============ -->
+<section id="installation">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Installation</p>
+      <h2>Was in den mods-Ordner gehört.</h2>
+      <p>Alles für Minecraft <strong>26.2</strong> und Fabric. Litematica und Baritone sind optional im technischen Sinn — ohne sie startet der Mod, kann aber nichts anzeigen bzw. nichts bauen.</p>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Mod</th><th scope="col">Version</th><th scope="col">Wofür</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Fabric Loader</td><td class="v">≥ 0.19.3</td><td><span class="req">Pflicht</span></td></tr>
+          <tr><td>Fabric API</td><td class="v">0.156.0+26.2</td><td><span class="req">Pflicht</span></td></tr>
+          <tr><td><a href="https://www.curseforge.com/minecraft/mc-mods/litematica">Litematica</a></td><td class="v">26.2-0.28.4+</td><td><span class="opt">Für die Placement-Liste</span></td></tr>
+          <tr><td><a href="https://www.curseforge.com/minecraft/mc-mods/malilib">MaLiLib</a></td><td class="v">26.2-0.29.2+</td><td><span class="opt">Von Litematica benötigt</span></td></tr>
+          <tr><td>Baritone</td><td class="v">für 26.2</td><td><span class="opt">Fürs Bauen — siehe unten</span></td></tr>
+          <tr><td>Java</td><td class="v">25</td><td><span class="req">Pflicht</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn">
+      <p class="lbl">Wichtig: die richtige Baritone-Variante</p>
+      <h3>Der <code>standalone</code>-Build funktioniert nicht.</h3>
+      <p>Baritone wird in drei Varianten gebaut. In <code>standalone</code> entfernt Baritones eigener ProGuard-Lauf die Keep-Regel für <code>baritone.api.**</code> — dort heißen alle API-Methoden nur noch <code>a()</code>, <code>b()</code>, <code>c()</code> und kein anderer Mod kann sie aufrufen. Nutzbar sind <strong>api</strong> und <strong>unoptimized</strong>.</p>
+      <p><strong>Empfohlen:</strong> auf <a href="https://meteorclient.com">meteorclient.com</a> der Download-Button <strong>„*Baritone [26.2]"</strong>. Das ist der eigenständige Fork von MeteorDevelopment — der volle Meteor Client muss <em>nicht</em> installiert werden.</p>
+      <p>Landet doch ein <code>standalone</code>-Build im Ordner, stürzt nichts ab: der Klick meldet dann <em>„Diese Baritone-Variante hat kein API-Paket"</em>.</p>
+    </div>
+
+    <ol class="steps">
+      <li><b>Fabric installieren</b><p>Fabric Loader für Minecraft 26.2 einrichten und einmal starten, damit der <code>mods</code>-Ordner existiert.</p></li>
+      <li><b>Abhängigkeiten ablegen</b><p>Fabric API, MaLiLib + Litematica und Baritone (api oder unoptimized) in den <code>mods</code>-Ordner kopieren.</p></li>
+      <li><b>autobuild-gui-0.1.0.jar dazu</b><p>Die JAR von hier daneben legen — sie ist client-seitig, auf dem Server muss nichts installiert werden.</p></li>
+      <li><b>Welt betreten, <kbd>B</kbd> drücken</b><p>Das Menü öffnet sich. Optional: <code>config/autobuildgui.json</code> steuert <code>closeScreenOnBuildStart</code> und <code>materialCheckEnabled</code>.</p></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ GRENZEN ============ -->
+<section id="grenzen">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Ehrlich gesagt</p>
+      <h2>Wo der Mod an seine Grenzen kommt.</h2>
+    </div>
+    <ul class="notes">
+      <li>
+        <h3>Kein Prozent-Fortschritt</h3>
+        <p>Baritones <code>IBuilderProcess</code> gibt keine Fortschritts-Auskunft. Deshalb zeigt der Balken „läuft" statt einer Zahl.</p>
+      </li>
+      <li>
+        <h3>Material-Check ist pessimistisch</h3>
+        <p>Litematica zählt den Bedarf für einen Bau von Null. Ein halb fertiges Placement verlangt darum mehr Material, als tatsächlich noch nötig ist. Im Creative-Modus wird gar nicht geprüft.</p>
+      </li>
+      <li>
+        <h3>Nur Client-Seite</h3>
+        <p>Der Mod sendet keine eigenen Netzwerkpakete. Auf Servern gelten dieselben Regeln wie für Baritone selbst — siehe Nutzungsbedingungen.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ DOWNLOAD ============ -->
+<section id="download">
+  <div class="wrap">
+    <div class="download">
+      <div>
+        <p class="eyebrow">Download</p>
+        <h2>Eine Datei, 28&nbsp;Kilobyte.</h2>
+        <p>Direkt vom GitHub-Release. Baritone und Litematica sind nicht enthalten — die lädst du separat, siehe Installation.</p>
+        <div class="cta-row" style="margin:26px 0 0">
+          <a class="btn btn-primary" href="https://github.com/aquaxs1/Autobuild-GUI/releases/download/v0.1.0/autobuild-gui-0.1.0.jar">.jar herunterladen</a>
+          <a class="btn" href="https://github.com/aquaxs1/Autobuild-GUI/releases">Alle Releases</a>
+        </div>
+      </div>
+      <div class="file">
+        <p class="fname">autobuild-gui-0.1.0.jar</p>
+        <dl>
+          <dt>Größe</dt><dd>28 KB</dd>
+          <dt>Minecraft</dt><dd>26.2</dd>
+          <dt>Loader</dt><dd>Fabric</dd>
+          <dt>Seite</dt><dd>Client</dd>
+          <dt>Lizenz</dt><dd>MIT</dd>
+        </dl>
+        <p class="hash">SHA-256<br>d7aa91d92f54deb74b93358f8b1ba1605f280a2d0f4f37f8d9346c78ea90a512</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ NUTZUNGSBEDINGUNGEN ============ -->
+<section id="terms">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Terms of Use</p>
+      <h2>Nutzungsbedingungen.</h2>
+      <p>Kurz und ohne Kleingedrucktes — aber lies den Punkt zu Servern.</p>
+    </div>
+
+    <div class="terms">
+      <div>
+        <h3>Lizenz</h3>
+        <p>Autobuild GUI steht unter der <a href="https://github.com/aquaxs1/Autobuild-GUI/blob/main/LICENSE">MIT-Lizenz</a>. Du darfst den Mod nutzen, verändern und weitergeben, solange Copyright-Hinweis und Lizenztext erhalten bleiben.</p>
+      </div>
+      <div>
+        <h3>Keine Gewährleistung</h3>
+        <p>Die Software wird „wie besehen" bereitgestellt, ohne Garantie jeder Art. Die Nutzung erfolgt auf eigenes Risiko; für Schäden an Welten, Accounts oder Hardware wird keine Haftung übernommen.</p>
+      </div>
+      <div>
+        <h3>Nutzung auf Servern</h3>
+        <p>Baritone automatisiert das Spiel. Viele Server verbieten Automatisierung und ahnden sie mit Bann. Ob der Einsatz auf einem bestimmten Server erlaubt ist, musst du selbst klären — das ist deine Verantwortung, nicht die des Mods.</p>
+      </div>
+      <div>
+        <h3>Fremde Software</h3>
+        <p>Baritone (LGPL-3.0) sowie Litematica und MaLiLib (LGPLv3) sind nicht Teil dieses Downloads und gelten unter ihren eigenen Lizenzen. Für Minecraft selbst gilt die <a href="https://www.minecraft.net/eula">Mojang-EULA</a>.</p>
+      </div>
+      <div>
+        <h3>Daten</h3>
+        <p>Der Mod läuft rein client-seitig, sendet keine eigenen Netzwerkpakete und erhebt keine Telemetrie. Diese Seite und die Downloads liegen bei GitHub, dessen Server Zugriffe protokollieren.</p>
+      </div>
+      <div>
+        <h3>Kein offizielles Produkt</h3>
+        <p>Autobuild GUI ist ein inoffizielles Fan-Projekt und steht in keiner Verbindung zu Mojang Studios, Microsoft oder den Teams hinter Baritone und Litematica.</p>
+      </div>
+    </div>
+    <p class="stamp">Stand: August 2026 · Änderungen bleiben vorbehalten.</p>
+  </div>
+</section>
+</main>
+
+<!-- ============ FUSSZEILE ============ -->
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div class="fabout">
+        <a class="brand" href="#top"><span class="cube"></span>Autobuild GUI</a>
+        <p>Client-seitiger Fabric-Mod für Minecraft 26.2. Menü für Litematica-Placements, gebaut von Baritone.</p>
+      </div>
+      <div>
+        <h4>Projekt</h4>
+        <ul>
+          <li><a href="#download">Download</a></li>
+          <li><a href="#features">Funktionen</a></li>
+          <li><a href="#interface">Interface</a></li>
+          <li><a href="#installation">Installation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Code</h4>
+        <ul>
+          <li><a href="https://github.com/aquaxs1/Autobuild-GUI">GitHub-Repository</a></li>
+          <li><a href="https://github.com/aquaxs1/Autobuild-GUI/releases">Releases</a></li>
+          <li><a href="https://github.com/aquaxs1/Autobuild-GUI/issues">Fehler melden</a></li>
+          <li><a href="https://github.com/aquaxs1/Autobuild-GUI/blob/main/README.md">Dokumentation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Braucht man dazu</h4>
+        <ul>
+          <li><a href="https://www.curseforge.com/minecraft/mc-mods/litematica">Litematica</a></li>
+          <li><a href="https://www.curseforge.com/minecraft/mc-mods/malilib">MaLiLib</a></li>
+          <li><a href="https://meteorclient.com">Baritone [26.2]</a></li>
+          <li><a href="https://fabricmc.net/use/installer/">Fabric Loader</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="fbottom">
+      <span>© 2026 aquaxs1 · MIT-Lizenz</span>
+      <span><a href="#terms">Nutzungsbedingungen</a> · <a href="https://github.com/aquaxs1/Autobuild-GUI/blob/main/LICENSE">Lizenz</a> · <a href="https://github.com/aquaxs1/Autobuild-GUI/issues">Support</a></span>
+      <span>Kein offizielles Minecraft-Produkt. Nicht mit Mojang oder Microsoft verbunden.</span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

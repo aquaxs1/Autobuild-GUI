@@ -9,6 +9,19 @@ komplett Baritone, das Einlesen der Schematics komplett Litematica.
 
 ---
 
+## Website
+
+Die Projektseite — Download, Kurzbeschreibung, Interface-Ansicht und Nutzungsbedingungen —
+liegt als statische Seite in [`docs/`](docs/index.html). Veröffentlichen über
+**Settings → Pages → Source: „Deploy from a branch", Branch `main`, Ordner `/docs`**;
+danach erreichbar unter `https://aquaxs1.github.io/Autobuild-GUI/`.
+
+Der Download-Button zeigt auf das Release-Asset `autobuild-gui-0.1.0.jar`. Bei einem neuen
+Release müssen in `docs/index.html` die Versionsnummer, die Dateigröße und der SHA-256
+angepasst werden.
+
+---
+
 ## Was der Mod tut
 
 - **`B`** (frei belegbar) öffnet das Menü.
