@@ -5,9 +5,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 /**
- * Das Autobuild-Menü.
+ * The autobuild menu.
  *
- * <p>Phase 1: nur Titel und Hintergrund. Die Placement-Liste kommt in Phase 3.
+ * <p>Phase 1: the title and the background only. The placement list arrives in phase 3.
  */
 public class AutobuildScreen extends Screen {
 	private static final int TITLE_TOP_MARGIN = 15;
