@@ -12,12 +12,18 @@ Baritone's job, reading the schematics entirely Litematica's.
 ## Website
 
 The project page — download, a short description, a look at the interface and the terms
-of use — lives as a static page in [`docs/`](docs/index.html). Publish it through
-**Settings → Pages → Source: "Deploy from a branch", branch `main`, folder `/docs`**;
-it is then reachable at `https://aquaxs1.github.io/Autobuild-GUI/`.
+of use — lives as a static page in [`site/`](site/index.html).
+
+GitHub Pages' "Deploy from a branch" option only serves the repository root or a `/docs`
+folder, not `/site` — publish this way instead: **Settings → Pages → Source: "GitHub
+Actions"**, then add a workflow that uploads `site/` as the Pages artifact (see
+[`actions/upload-pages-artifact`](https://github.com/actions/upload-pages-artifact)). It
+is then reachable at `https://aquaxs1.github.io/Autobuild-GUI/`. Any other static host
+(Vercel, Netlify, Cloudflare Pages, …) can point its build output directory at `site/`
+directly.
 
 The download button points at the release asset `autobuild-gui-0.1.0.jar`. On a new
-release, the version number, the file size and the SHA-256 in `docs/index.html` have to
+release, the version number, the file size and the SHA-256 in `site/index.html` have to
 be updated.
 
 ---
