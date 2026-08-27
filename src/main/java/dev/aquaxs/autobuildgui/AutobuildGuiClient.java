@@ -1,6 +1,7 @@
 package dev.aquaxs.autobuildgui;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import dev.aquaxs.autobuildgui.config.AutobuildConfig;
 import dev.aquaxs.autobuildgui.gui.AutobuildScreen;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -13,6 +14,10 @@ public class AutobuildGuiClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
+		// Load early, so that config/autobuildgui.json exists right after the first
+		// start rather than only once the menu is opened for the first time.
+		AutobuildConfig.get();
+
 		openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 				"key." + AutobuildGui.MOD_ID + ".open_menu",
 				InputConstants.Type.KEYSYM,
@@ -29,11 +34,15 @@ public class AutobuildGuiClient implements ClientModInitializer {
 				pressed = true;
 			}
 
-			if (pressed && client.gui.screen() == null) {
+			// Only inside a world: without a player there would be neither placements nor
+			// an inventory to check, and the material check needs a player.
+			if (pressed && client.gui.screen() == null && client.player != null && client.level != null) {
 				client.setScreenAndShow(new AutobuildScreen());
 			}
 		});
 
-		AutobuildGui.LOGGER.info("Autobuild GUI initialisiert");
+		AutobuildCommands.register();
+
+		AutobuildGui.LOGGER.info("Autobuild GUI initialised");
 	}
 }

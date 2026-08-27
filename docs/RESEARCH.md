@@ -261,7 +261,59 @@ JAR while implementing.
 
 ---
 
-### No release for 26.2
+## 5b. Litematica/malilib as a real compile dependency
+
+Unlike Baritone, Litematica has a published Maven artefact on
+`masa.dy.fi/maven/sakura-ryoko`, hence `compileOnly` rather than a JAR in `libs/`.
+Verified with `curl` against the real `maven-metadata.xml`:
+
+| Artefact | Published version | Note |
+|---|---|---|
+| `fi.dy.masa.litematica:litematica-fabric-26.2` | `0.28.4` | The source branch (`26.2` on GitHub) is already at `0.28.5-sakura.11` — that is an unpublished dev state, not on the Maven. We build against the published `0.28.4`. |
+| `fi.dy.masa.malilib:malilib-fabric-26.2` | `0.29.2` | Read out of the POM of `litematica-fabric-26.2:0.28.4` itself (declared as a dependency there) — not the newer `0.29.3`, which it does not reference. |
+
+**`me.fallenbreath:conditional-mixin-fabric:0.6.4`** is a transitive dependency of
+Litematica, but reachable only on `maven.fallenbreath.me` — not on the allowed host
+list, and mirrored on no reachable host (Maven Central: 404). Since our adapter code
+never touches that class (only Litematica itself needs it at runtime, and the separately
+installed Litematica mod brings it along), it is taken out of the compile dependency with
+a Gradle `exclude`:
+
+```groovy
+compileOnly("fi.dy.masa.litematica:litematica-fabric-${minecraft_version}:${litematica_version}") {
+    exclude group: 'me.fallenbreath', module: 'conditional-mixin-fabric'
+}
+```
+
+Checked with `javap` against the real mapped `litematica-fabric-26.2-0.28.4.jar`; every
+signature matches the source clone:
+
+```java
+// fi.dy.masa.litematica.data.DataManager
+public static SchematicPlacementManager getSchematicPlacementManager();
+
+// fi.dy.masa.litematica.schematic.placement.SchematicPlacementManager
+public List<SchematicPlacement> getAllSchematicsPlacements();
+
+// fi.dy.masa.litematica.schematic.placement.SchematicPlacement
+public String getName();
+public LitematicaSchematic getSchematic();
+public BlockPos getOrigin();
+
+// fi.dy.masa.litematica.schematic.LitematicaSchematic
+public SchematicMetadata getMetadata();
+
+// fi.dy.masa.litematica.schematic.SchematicMetadata
+public String getName();
+public int getTotalBlocks();
+public Vec3i getEnclosingSize();
+```
+
+`SchematicMetadata` hands over name, size and block count in a single call — that is the
+canonical source, the one Litematica itself uses for display purposes (not recomputed
+from the geometry).
+
+## 6. Baritone: no release for 26.2 (relevant to phase 4)
 
 `cabaletta/baritone@26.2` exists as a branch (HEAD `2991d92`, a GitHub merge commit by
 leijurv from 2026-08-11, PR #5076 by ZacSharp). But there is **no tag and no release**
@@ -273,11 +325,338 @@ upstream.
 
 ---
 
-## 6. Open questions
+## 6b. Scroll list and widgets (phase 3, verified against the real JAR)
 
-- The scroll-list base class for phase 3 (the `ObjectSelectionList` equivalent) — not yet
-  looked up in the JAR.
-- `LitematicaSchematic.getAreaSize(...)` and working out the block count (phase 2).
+The earlier "open" item is settled: `ObjectSelectionList<E>` exists in 26.2 unchanged in
+principle, only with the new extract pipeline. Verified with `javap` **and** against a
+real 26.2 example from Fabric API itself (`ChannelList`/`ChannelScreen`,
+`fabric-networking-api-v1/src/testmodClient/.../channeltest/`):
+
+```java
+// net.minecraft.client.gui.components.AbstractSelectionList<E extends Entry<E>>
+//   extends AbstractContainerWidget extends AbstractScrollArea
+protected AbstractSelectionList(Minecraft, int width, int height, int y, int itemHeight);
+// x is ALWAYS 0 in the constructor (super(0, y, width, height, ...)) - position it
+// yourself afterwards through the inherited AbstractWidget.setX(int).
+
+public int getRowWidth();      // default: a fixed 220, centred - override for wider
+                                // rows (icon+name+badge needs more)
+public int getRowLeft();       // = getX() + width/2 - getRowWidth()/2
+public static final int AbstractScrollArea.SCROLLBAR_WIDTH;  // = 6 (ConstantValue checked)
+
+// net.minecraft.client.gui.components.AbstractSelectionList.Entry<E>
+public abstract void extractContent(GuiGraphicsExtractor, int mouseX, int mouseY, boolean hovered, float tickDelta);
+public int getContentX(); getContentY(); getContentRight(); getContentYMiddle();  // padding already accounted for
+
+// net.minecraft.client.gui.components.ObjectSelectionList.Entry<E> (in addition)
+public abstract Component getNarration();
+public boolean mouseClicked(MouseButtonEvent, boolean);   // default: just "return true", NO select call of its own
+```
+
+**A correction to an earlier assumption here:** `ObjectSelectionList.Entry.mouseClicked`
+does NOT select anything itself (`iconst_1; ireturn` in the bytecode - a pure no-op return
+value). Selection runs down a different path: `ContainerEventHandler.mouseClicked` (a
+default method, inherited by the list) finds the clicked entry through `getChildAt(x,y)`,
+calls `entry.mouseClicked(...)`, and if that returns `true` plus
+`entry.shouldTakeFocusAfterInteraction()`, the list calls `this.setFocused(entry)` on
+itself. `AbstractSelectionList.setFocused(...)` is overridden and calls `setSelected(entry)`
+in there. For phase 4 that means: an `Entry.mouseClicked` override of our own that passes
+`super.mouseClicked(...)` through (still returning `true`) does not break selection - the
+build trigger simply comes on top.
+
+`ChannelList` (a Fabric API test mod, compiled against 26.2) confirms the exact parameter
+order of `extractContent` one to one:
+
+```java
+public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float tickDelta)
+```
+
+### The new input model
+
+`GuiEventListener.mouseClicked` is now called `mouseClicked(MouseButtonEvent, boolean doubleClick)`
+instead of the old `(double x, double y, int button)` - `MouseButtonEvent` is a record with
+`x()`, `y()`, `button()`. Forwarding clicks to entries happens automatically through
+`ContainerEventHandler.mouseClicked(...)` (a default method), as long as the entry
+implements `GuiEventListener` - no dispatch code of our own needed.
+
+## 8. Baritone: where to get it, and verifying the JAR (phase 4)
+
+### Recommended source: meteorclient.com
+
+**The JAR used in `libs/` comes from the official download page `meteorclient.com`,
+button "\*Baritone [26.2]".** That is the standalone MeteorDevelopment fork of Baritone —
+**not** a part of the full Meteor Client; the utility mod does not have to be installed.
+
+| | |
+|---|---|
+| Source | `meteorclient.com`, download button "\*Baritone [26.2]" |
+| Uploaded into this session | 2026-08-15, 07:44 UTC |
+| SHA-256 | `8a2e7b71229005fd451e5f012f8b9c715e41531631a4a0a53c900a47cd852423` |
+| Size | 4 852 460 bytes |
+| Mod ID / version | `baritone-meteor` / `26.2-SNAPSHOT` |
+| Embedded | `META-INF/jars/nether-pathfinder-1.6.jar` |
+
+The exact download date cannot be verified independently here: `meteorclient.com` is not
+reachable from this build environment (egress policy), the JAR arrived by upload. The
+provenance is the project owner's word; what is checkable is the SHA-256 above — the file
+in `libs/baritone-26.2.jar` is byte-identical to the upload.
+
+This source is the **primary recommendation for the README** (phase 6), because it ships
+an API-preserving variant (see below).
+
+`dysnasia/baritone-26.2` remains worth mentioning as an alternative, **but**: its current
+release (tag `26.2`) is the `standalone` variant and has no usable API — neither for
+compiling nor at runtime. Details below.
+
+### Verifying the JAR
+
+Building Baritone from source at the `26.2` tag failed on a growing chain of legacy hosts
+(Unimined itself needed `maven.wagyourtail.xyz` + `launchermeta.mojang.com`, and after that
+`files.betacraft.uk` plus six more candidate repos for `dev.babbaj:nether-pathfinder` - see
+the conversation). Rather than inflating the allow list indefinitely, the user uploaded a
+real `baritone-26.2.jar` out of their own Meteor Client installation.
+
+**Important: this JAR comes from `MeteorDevelopment/baritone` (embedded in Meteor), not from
+`dysnasia/baritone-26.2`.** From the manifest/`fabric.mod.json` check:
+
+```
+Fabric-Minecraft-Version: 26.2
+Fabric-Loader-Version: 0.19.3
+mod id: "baritone-meteor"  (not "baritone")
+version: "26.2-SNAPSHOT"
+entrypoints: {}            (empty - does not initialise itself through Fabric)
+jars: [ "META-INF/jars/nether-pathfinder-1.6.jar" ]   (a real Fabric jar-in-jar, built with Loom)
+```
+
+Verified with `javap` against the real `.class` files in this JAR - every signature matches
+the `cabaletta/baritone@26.2` source exactly:
+
+```java
+// baritone.api.BaritoneAPI
+public static IBaritoneProvider getProvider();
+public static Settings getSettings();
+
+// baritone.api.IBaritoneProvider
+IBaritone getPrimaryBaritone();
+
+// baritone.api.IBaritone
+IBuilderProcess getBuilderProcess();
+
+// baritone.api.process.IBuilderProcess extends IBaritoneProcess
+void buildOpenLitematic(int);
+List<BlockState> getApproxPlaceable();   // candidate for the phase 5 material check
+Optional<Integer> getMinLayer(); getMaxLayer();
+
+// baritone.api.process.IBaritoneProcess (base interface, relevant to phase 5)
+boolean isActive();
+```
+
+`LitematicaCommand.execute(...)` was additionally traced through the bytecode (not just the
+source): internally it still calls `baritone.getBuilderProcess().buildOpenLitematic(index - 1)`
+- the 0-based index semantics are confirmed, not merely assumed.
+
+### Obfuscation outside `baritone.api.*`
+
+`baritone.utils.schematic.litematica.LitematicaHelper` is ProGuard-minified in this JAR:
+`isLitematicaPresent()` → `a()`, `hasLoadedSchematic(int)` → `a(int)`, `getSchematic(int)` →
+`a(int)` (two overloads named `a` with an identical parameter type, differing only in return
+type - not callable from Java source, only through reflection). It does not affect us: our own
+`LitematicaAdapter` (phase 2) reads Litematica directly, without ever going through Baritone's
+`LitematicaHelper`. In this (Meteor) JAR the public `baritone.api.*` package stays readable -
+it is an `api` variant.
+
+> **Addendum:** an earlier version of this section concluded from that, that `baritone.api.*`
+> is preserved *in general*. That is wrong and was disproved by a second, real JAR - see the
+> following section. Whether the API survives depends solely on the distribution variant
+> chosen.
+
+### Baritone ships THREE variants - only two of them are usable by other mods
+
+**This is the most important finding for this project.** From `BaritoneGradleTask.java`:
+
+```java
+ARTIFACT_UNOPTIMIZED = "%s-unoptimized-%s.jar";
+ARTIFACT_API         = "%s-api-%s.jar";
+ARTIFACT_STANDALONE  = "%s-standalone-%s.jar";
+```
+
+For a Fabric build the files are therefore called:
+
+| File | `baritone.api.*` | Usable for us |
+|---|---|---|
+| `baritone-api-fabric-26.2.jar` | preserved | **yes** |
+| `baritone-unoptimized-fabric-26.2.jar` | preserved (no ProGuard) | yes |
+| `baritone-standalone-fabric-26.2.jar` | **obfuscated away** | **no** |
+
+The difference is made in `scripts/proguard.pro` line 31:
+
+```
+-keep class baritone.api.** { *; } # this is the keep api
+```
+
+and `ProguardTask.generateConfigs()`:
+
+```java
+// For the Standalone config, don't keep the API package
+standalone.removeIf(s -> s.contains("# this is the keep api"));
+```
+
+In the `standalone` variant every API method is called just `a()`, `b()`, `c()`. Confirmed
+with `javap` against a real `standalone` JAR (dysnasia/baritone-26.2, tag `26.2`):
+
+```java
+// baritone.api.BaritoneAPI - standalone
+public static IBaritoneProvider a();   // was getProvider()
+public static Settings a();            // was getSettings()
+
+// baritone.api.IBaritone - standalone: 17 methods, ALL of them "a()"
+public abstract baritone.process.BuilderProcess a();   // was getBuilderProcess()
+public abstract baritone.behavior.PathingBehavior a(); // was getPathingBehavior()
+// ... 15 more
+```
+
+Two consequences, both hard:
+
+1. **Compiling against it is impossible.** Methods that differ only in return type are valid
+   bytecode, but not callable from Java source.
+2. **Incompatible at runtime, too.** A mod compiled against the `api` variant throws a
+   `NoSuchMethodError` against an installed `standalone` JAR. So the user has to *install*
+   the `api` or `unoptimized` variant as well.
+
+On top of that, ProGuard shrinks unused methods away entirely in the `standalone` variant -
+`IBuilderProcess` loses `getApproxPlaceable()`, `getMinLayer()`, `getMaxLayer()` and
+`isPaused()` among others. For phase 5 (the material check through `getApproxPlaceable()`)
+the `api` variant is therefore mandatory, not merely convenient.
+
+That is why `BaritoneAdapter` catches `LinkageError` and reports
+`BuildRequestResult.BARITONE_WITHOUT_API` instead of taking the client down with it.
+
+### Two valid mod IDs
+
+Since both `baritone` (the dysnasia standalone, verified from the source) and
+`baritone-meteor` (this JAR) are genuinely in circulation, `BaritoneAdapter.isAvailable()`
+checks for both IDs. `BaritoneAPI`'s static initialiser instantiates `BaritoneProvider` on
+first class access (not through Fabric's entrypoint mechanism) - which explains why the Meteor
+JAR works despite its empty `"entrypoints": {}`, as soon as any code (ours included) calls
+`BaritoneAPI.getProvider()`.
+
+### EditBox / Button (phase 3, verified)
+
+```java
+public EditBox(Font, int x, int y, int width, int height, Component narrationMessage);
+public void setResponder(Consumer<String>);
+public void setHint(Component);
+
+public static Button.Builder Button.builder(Component, Button.OnPress);  // OnPress.onPress(Button)
+```
+
+## 8b. Material check, cancelling and progress (phase 5)
+
+### The material check: Litematica rather than Baritone
+
+Baritone's `IBuilderProcess.getApproxPlaceable()` is, by its own javadoc,
+*"updated every tick, but only while the builder process is active"* — so it only returns
+data **after** the build is running, which makes it useless for a check *before* the start.
+For phase 5 it is unusable.
+
+Litematica, on the other hand, has a synchronous path. Important: the obvious route through
+`SchematicPlacement.getMaterialList()` is **not** it — its `reCreateMaterialList()` merely
+schedules a `TaskCountBlocksPlacement` in the `TaskScheduler` (asynchronous, across many
+ticks, with a chat message of its own,
+`litematica.message.scheduled_task_added`). Instead:
+
+```java
+// fi.dy.masa.litematica.materials.MaterialListUtils - all static and synchronous
+public static List<MaterialListEntry> createMaterialListFor(LitematicaSchematic);
+public static void updateAvailableCounts(List<MaterialListEntry>, Player);
+
+// fi.dy.masa.litematica.materials.MaterialListEntry
+public ItemStack getStack();
+public int getCountTotal();
+public int getCountMissing();
+public int getCountAvailable();
+```
+
+The semantics, from the bytecode of `createMaterialListFor(schematic, regionNames)`: it
+iterates every sub-region container (`getSubRegionContainer(name).get(x,y,z)` across the full
+volume), counts each `BlockState` into a `countsTotal` map, then passes `countsTotal.clone()`
+as *countsMissing* and an **empty** map as *countsMismatched*.
+
+From which it follows: **`countMissing == countTotal`** on this path. It is a build-from-scratch
+list without any comparison against the world - "missing" here does *not* mean "missing from
+the inventory". The actual shortfall is:
+
+```java
+shortfall = max(0, entry.getCountTotal() - entry.getCountAvailable())
+```
+
+`updateAvailableCounts(...)` reads nothing but `Player.getInventory()` and sets
+`countAvailable`. Two consequences:
+
+- **No special case for creative.** A creative player with an empty inventory would be told
+  "everything is missing". The check has to be skipped in creative mode.
+- The cost is proportional to the schematic volume (a pure in-memory pass, no world access).
+  Not critical for the usual schematics; for very large ones, a noticeable one-off hitch in
+  the client tick.
+
+### Cancelling
+
+```java
+// baritone.api.behavior.IPathingBehavior
+public abstract boolean cancelEverything();
+public abstract void forceCancel();
+public abstract boolean isPathing();
+
+// baritone.api.process.IBaritoneProcess (inherited by IBuilderProcess)
+public abstract boolean isActive();
+```
+
+`cancelEverything()` is the route Baritone's own `#stop` command takes as well.
+
+### Progress: no source for it in Baritone
+
+`IBuilderProcess` has **no** progress method. The complete list (from the API-preserving JAR):
+
+```
+build×3, buildOpenSchematic, buildOpenLitematic, pause, isPaused, resume,
+clearArea, getApproxPlaceable, getMinLayer, getMaxLayer
+```
+
+A real percentage ("X of Y blocks placed") cannot be derived from that. The only clean source
+would be Litematica's `SchematicVerifier`
+(`SchematicPlacement.getSchematicVerifier()` / `hasVerifier()`), which likewise runs
+asynchronously through the `TaskScheduler`. See the open questions.
+
+## 9. Open questions
+
 - A keybind category of our own instead of `Category.MISC` (see section 3).
 - The key press itself cannot be verified in this environment: the client starts headless
-  under Xvfb as far as the main menu, but there is no keyboard input.
+  under Xvfb as far as the main menu, but there is no keyboard input. The
+  `/autobuildgui list` command (phase 2) goes untested in real chat for the same reason,
+  but it is Brigadier code following the same pattern as Fabric API's own
+  `ClientCommandTest`.
+- Phase 3 (`AutobuildScreen`, `PlacementListWidget`) is compiled against the real 26.2 API
+  and matches a real Fabric API 26.2 test mod (`ChannelList`/`ChannelScreen`), but is
+  **not visually checked**: there is no `xdotool`/screenshot tooling in this sandbox to
+  actually open the screen by a key press and see the layout (row height, scrollbar gap,
+  text truncation) on screen. Please check it in the real game, especially with long
+  placement names.
+- **The progress bar shows no percentage** (phase 5). Baritone's `IBuilderProcess` offers
+  no progress information, so the bar is indeterminate (a travelling segment = "running").
+  A real percentage would need Litematica's `SchematicVerifier`
+  (`SchematicPlacement.getSchematicVerifier()`), which runs asynchronously through the
+  `TaskScheduler` and produces chat messages of its own.
+  **Decided: it stays indeterminate for now.** Whether the async complexity and the foreign
+  chat messages are bearable can only be judged in the game — noted down for *after* the
+  first working release, explicitly not for phase 6.
+- The material check runs **when the menu is opened**, not continuously. If the inventory
+  changes while the menu is open, the row badges are stale; the click checks again before
+  it builds, though, so it cannot build on stale data.
+- For a partially built placement the shortfall is pessimistic: Litematica's synchronous
+  path counts what a build from zero needs, without looking at the world (see section 8b).
+- Whether the click on ✕ has the right hit area cannot be checked headless.
+- The keybind deliberately does not live in `config/autobuildgui.json`: Minecraft stores key
+  bindings itself in `options.txt`, and a second source would overwrite the change made in
+  the controls menu on the next start. So it is bound through Options &rarr; Controls. That
+  makes the phase 6 item "config (keybind, ...)" deliberately solved differently from its
+  literal description.

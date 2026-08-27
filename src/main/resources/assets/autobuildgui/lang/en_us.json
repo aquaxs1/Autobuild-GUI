@@ -1,4 +1,15 @@
 {
 	"key.autobuildgui.open_menu": "Open Autobuild menu",
-	"gui.autobuildgui.title": "Autobuild"
+	"gui.autobuildgui.title": "Autobuild",
+	"gui.autobuildgui.search": "Search...",
+	"gui.autobuildgui.placement_size": "%sx%sx%s - %s blocks",
+	"gui.autobuildgui.status_ready": "Ready",
+	"gui.autobuildgui.blocks_missing": "%s blocks missing",
+	"gui.autobuildgui.blocked_missing": "Build not started: %s blocks missing from your inventory.",
+	"gui.autobuildgui.cancel_failed": "Cancel failed.",
+	"gui.autobuildgui.no_placements": "No schematic placements loaded in Litematica.",
+	"gui.autobuildgui.placement_changed": "The placement list has changed. Reloaded the list - please pick again.",
+	"gui.autobuildgui.litematica_missing": "Litematica not found.",
+	"gui.autobuildgui.baritone_missing": "Baritone not found.",
+	"gui.autobuildgui.baritone_without_api": "This Baritone build has no API package (standalone variant). Please install the api or unoptimized variant."
 }
