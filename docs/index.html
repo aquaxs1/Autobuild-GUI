@@ -223,7 +223,7 @@ section{padding:clamp(56px,8vw,96px) 0;border-bottom:1px solid var(--line)}
 @media (max-width:760px){.legend{grid-template-columns:minmax(0,1fr)}}
 .legend li{display:flex;gap:16px;padding:16px 0;border-top:1px solid var(--line)}
 .legend .swatch{width:34px;flex:none;display:flex;align-items:center;justify-content:center;padding-top:3px}
-.legend h3{margin-bottom:3px}
+.legend li{align-items:center}
 .legend p{color:var(--muted);font-size:.92rem}
 .sw-icon{width:20px;height:20px;background:var(--stone);position:relative}
 .sw-icon::after{content:"";position:absolute;inset:1px;background:var(--stone-dim)}
@@ -330,7 +330,7 @@ footer{padding:clamp(48px,6vw,72px) 0 32px}
       <h1>Autobuild&nbsp;GUI
         <span class="thin">Click a Litematica placement. Baritone builds it.</span>
       </h1>
-      <p class="lede">No command to type, no index to guess: <kbd>B</kbd> opens a list of every loaded schematic — <strong>one click starts the build</strong>. The mod is pure menu; the building is Baritone's job.</p>
+      <p class="lede">No commands, no indices to guess — <kbd>B</kbd>, pick a row, <strong>done</strong>.</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="https://github.com/aquaxs1/Autobuild-GUI/releases/download/v0.1.0/autobuild-gui-0.1.0.jar">Download .jar <span class="sz">· 28&nbsp;KB</span></a>
         <a class="btn" href="https://github.com/aquaxs1/Autobuild-GUI">View the source</a>
@@ -395,39 +395,39 @@ footer{padding:clamp(48px,6vw,72px) 0 32px}
     <div class="sec-head">
       <p class="eyebrow">What the mod does</p>
       <h2>Six things, no more.</h2>
-      <p>Autobuild GUI is deliberately small: it reads what Litematica has loaded, checks your inventory and hands the job to Baritone. Everything else those two do themselves.</p>
+      <p>Reads Litematica, checks your inventory, hands off to Baritone.</p>
     </div>
 
     <div class="features">
       <div class="feature">
         <span class="tag">Hotkey</span>
-        <h3>A menu at the press of a key</h3>
-        <p><kbd>B</kbd> opens the list — mid-game, without a chat command. The key is rebindable under <em>Options → Controls</em>.</p>
+        <h3>One key, one menu</h3>
+        <p>No chat command. Rebindable under <em>Options → Controls</em>.</p>
       </div>
       <div class="feature">
         <span class="tag">Overview</span>
         <h3>Every placement at a glance</h3>
-        <p>Every row shows name, dimensions and block count. The search box filters by name as you type — even with twenty schematics loaded.</p>
+        <p>Name, size, block count. Search filters as you type.</p>
       </div>
       <div class="feature">
         <span class="tag">Material-Check</span>
-        <h3>Tells you beforehand what is missing</h3>
-        <p>If the inventory falls short, the row reads <em>"N blocks missing"</em> and the click is locked — rather than getting stuck halfway through.</p>
+        <h3>Missing blocks, upfront</h3>
+        <p>Short on blocks? The row says how many — click locked.</p>
       </div>
       <div class="feature">
         <span class="tag">One click</span>
-        <h3>A click starts the build</h3>
-        <p>Baritone gets exactly that placement and the menu closes. No counting indices, no <code>#build</code> with coordinates.</p>
+        <h3>One click builds</h3>
+        <p>No indices, no <code>#build</code> with coordinates — just that placement.</p>
       </div>
       <div class="feature">
         <span class="tag">Control</span>
-        <h3>A running indicator you can stop</h3>
-        <p>Open the menu again and the running placement shows a bar and a red <em>✕</em>. Only ever one build runs; a new one cancels the old one cleanly.</p>
+        <h3>Cancel anytime</h3>
+        <p>Reopen the menu for a bar and a red <em>✕</em> to cancel.</p>
       </div>
       <div class="feature">
         <span class="tag">Robust</span>
-        <h3>Does not crash when something is missing</h3>
-        <p>Without Litematica or Baritone the menu still opens and says in plain words which mod is missing. Both are genuine soft dependencies.</p>
+        <h3>Fails gracefully</h3>
+        <p>Missing Litematica or Baritone? The menu still opens and says what's missing.</p>
       </div>
     </div>
   </div>
@@ -439,26 +439,26 @@ footer{padding:clamp(48px,6vw,72px) 0 32px}
     <div class="sec-head">
       <p class="eyebrow">How it works</p>
       <h2>Three mods, one chain.</h2>
-      <p>Autobuild GUI does not place a single block itself. It is the layer in between — menu and glue.</p>
+      <p>This mod places no blocks itself — it's the menu in between.</p>
     </div>
 
     <div class="pipe">
       <div class="step">
         <p class="who">Litematica</p>
         <b>Loads the schematic</b>
-        <p>You load your <code>.litematic</code> file as usual and put the placement into the world.</p>
+        <p>Load your <code>.litematic</code> file, place it in the world.</p>
       </div>
       <div class="arrow" aria-hidden="true">→</div>
       <div class="step self">
         <p class="who">Autobuild GUI</p>
         <b>Shows the list, you click</b>
-        <p>Press <kbd>B</kbd>, pick a row. Before that, the mod checks your inventory.</p>
+        <p>Press <kbd>B</kbd>, pick a row — inventory checked first.</p>
       </div>
       <div class="arrow" aria-hidden="true">→</div>
       <div class="step">
         <p class="who">Baritone</p>
         <b>Walks and builds</b>
-        <p>Pathfinding and block placement are entirely Baritone's — until you cancel or it is done.</p>
+        <p>Pathfinding and placement are Baritone's, until you cancel or it's done.</p>
       </div>
     </div>
 
@@ -482,29 +482,25 @@ footer{padding:clamp(48px,6vw,72px) 0 32px}
         <li>
           <span class="swatch"><span class="sw-icon"></span></span>
           <div>
-            <h3>Name, dimensions, block count</h3>
-            <p>The placement icon on the left, the name beside it and below it in grey <code>32x18x24 - 12,480 blocks</code>. Enough to tell two similar schematics apart.</p>
+            <p>Icon, name and size below in grey.</p>
           </div>
         </li>
         <li>
           <span class="swatch"><span class="sw-bar"></span></span>
           <div>
-            <h3>A running bar rather than invented percentages</h3>
-            <p>The bar travels instead of showing a number: Baritone's builder API reports no progress. A made-up percentage would be worse than none.</p>
+            <p>Baritone reports no real progress, not a percentage.</p>
           </div>
         </li>
         <li>
           <span class="swatch"><span class="sw-text">1,284<br>missing</span></span>
           <div>
-            <h3>A red row means locked</h3>
-            <p>If material is missing, the row is blocked rather than started. The click checks again — nothing is ever built on stale data.</p>
+            <p>Missing material locks the row.</p>
           </div>
         </li>
         <li>
           <span class="swatch"><svg class="sw-cursor" viewBox="0 0 12 16" aria-hidden="true"><path d="M0 0 L0 12 L3 9 L5.5 15 L7.5 14 L5 8.5 L9 8.5 Z"/></svg></span>
           <div>
-            <h3>One click, no dialog</h3>
-            <p>Click a row, the menu closes, Baritone runs. Press <kbd>B</kbd> again to see the running build with an <em>✕</em> to cancel.</p>
+            <p>Click, menu closes, Baritone runs.</p>
           </div>
         </li>
       </ul>
@@ -518,7 +514,7 @@ footer{padding:clamp(48px,6vw,72px) 0 32px}
     <div class="sec-head">
       <p class="eyebrow">Installation</p>
       <h2>What belongs in the mods folder.</h2>
-      <p>Everything for Minecraft <strong>26.2</strong> and Fabric. Litematica and Baritone are optional in the technical sense — without them the mod starts, but it has nothing to show and nothing to build with.</p>
+      <p>Everything for Minecraft <strong>26.2</strong> and Fabric — Litematica and Baritone are optional, but there's nothing to build without them.</p>
     </div>
 
     <div class="table-scroll">
@@ -538,18 +534,17 @@ footer{padding:clamp(48px,6vw,72px) 0 32px}
     </div>
 
     <div class="warn">
-      <p class="lbl">Important: the right Baritone variant</p>
+      <p class="lbl">Pick the right Baritone variant</p>
       <h3>The <code>standalone</code> build does not work.</h3>
-      <p>Baritone is built in three variants. In <code>standalone</code>, Baritone's own ProGuard run removes the keep rule for <code>baritone.api.**</code> — every API method there is called just <code>a()</code>, <code>b()</code>, <code>c()</code> and no other mod can call them. The usable ones are <strong>api</strong> and <strong>unoptimized</strong>.</p>
-      <p><strong>Recommended:</strong> on <a href="https://meteorclient.com">meteorclient.com</a>, the download button <strong>"*Baritone [26.2]"</strong>. That is the standalone fork by MeteorDevelopment — the full Meteor Client does <em>not</em> have to be installed.</p>
-      <p>If a <code>standalone</code> build ends up in the folder anyway, nothing crashes: the click then reports <em>"This Baritone build has no API package"</em>.</p>
+      <p>Baritone ships in three variants; <code>standalone</code> strips the public API, leaving unusable <code>a()</code>/<code>b()</code>/<code>c()</code> methods — nothing crashes, but the build won't start. Use <strong>api</strong> or <strong>unoptimized</strong>.</p>
+      <p><strong>Recommended:</strong> <a href="https://meteorclient.com">meteorclient.com</a> → <strong>"*Baritone [26.2]"</strong>, MeteorDevelopment's fork. The full Meteor Client isn't required.</p>
     </div>
 
     <ol class="steps">
-      <li><b>Install Fabric</b><p>Set up Fabric Loader for Minecraft 26.2 and start it once, so that the <code>mods</code> folder exists.</p></li>
-      <li><b>Drop in the dependencies</b><p>Copy Fabric API, MaLiLib + Litematica and Baritone (api or unoptimized) into the <code>mods</code> folder.</p></li>
-      <li><b>Add autobuild-gui-0.1.0.jar</b><p>Put the JAR from here alongside them — it is client-side, nothing has to be installed on the server.</p></li>
-      <li><b>Enter a world, press <kbd>B</kbd></b><p>The menu opens. Optional: <code>config/autobuildgui.json</code> controls <code>closeScreenOnBuildStart</code> and <code>materialCheckEnabled</code>.</p></li>
+      <li><b>Install Fabric</b><p>Fabric Loader for 26.2, started once to create the <code>mods</code> folder.</p></li>
+      <li><b>Drop in the dependencies</b><p>Copy Fabric API, MaLiLib + Litematica, and Baritone into <code>mods</code>.</p></li>
+      <li><b>Add autobuild-gui-0.1.0.jar</b><p>Add this JAR too — client-side only, nothing needed on the server.</p></li>
+      <li><b>Enter a world, press <kbd>B</kbd></b><p>Optional: <code>config/autobuildgui.json</code> controls <code>closeScreenOnBuildStart</code> and <code>materialCheckEnabled</code>.</p></li>
     </ol>
   </div>
 </section>
@@ -564,15 +559,15 @@ footer{padding:clamp(48px,6vw,72px) 0 32px}
     <ul class="notes">
       <li>
         <h3>No percentage progress</h3>
-        <p>Baritone's <code>IBuilderProcess</code> gives no progress information. That is why the bar shows "running" instead of a number.</p>
+        <p>Baritone reports no progress, so the bar just shows "running".</p>
       </li>
       <li>
         <h3>The material check is pessimistic</h3>
-        <p>Litematica counts what a build from zero needs. A half-finished placement therefore asks for more material than is actually still required. In creative mode nothing is checked at all.</p>
+        <p>Litematica counts from zero, so a half-built placement looks short. Creative mode skips the check.</p>
       </li>
       <li>
         <h3>Client-side only</h3>
-        <p>The mod sends no network packets of its own. On servers the same rules apply as for Baritone itself — see the terms of use.</p>
+        <p>No network packets of its own — same server rules as Baritone.</p>
       </li>
     </ul>
   </div>
@@ -585,7 +580,7 @@ footer{padding:clamp(48px,6vw,72px) 0 32px}
       <div>
         <p class="eyebrow">Download</p>
         <h2>One file, 28&nbsp;kilobytes.</h2>
-        <p>Straight from the GitHub release. Baritone and Litematica are not included — you download those separately, see Installation.</p>
+        <p>Straight from the GitHub release. Baritone and Litematica aren't included — see Installation.</p>
         <div class="cta-row" style="margin:26px 0 0">
           <a class="btn btn-primary" href="https://github.com/aquaxs1/Autobuild-GUI/releases/download/v0.1.0/autobuild-gui-0.1.0.jar">Download the .jar</a>
           <a class="btn" href="https://github.com/aquaxs1/Autobuild-GUI/releases">All releases</a>
@@ -618,27 +613,19 @@ footer{padding:clamp(48px,6vw,72px) 0 32px}
     <div class="terms">
       <div>
         <h3>Licence</h3>
-        <p>Autobuild GUI is licensed under the <a href="https://github.com/aquaxs1/Autobuild-GUI/blob/main/LICENSE">MIT licence</a>. You may use, modify and pass on the mod as long as the copyright notice and the licence text stay intact.</p>
+        <p><a href="https://github.com/aquaxs1/Autobuild-GUI/blob/main/LICENSE">MIT licensed</a> — use, modify, share, keep the copyright notice.</p>
       </div>
       <div>
-        <h3>No warranty</h3>
-        <p>The software is provided "as is", without warranty of any kind. Use is at your own risk; no liability is accepted for damage to worlds, accounts or hardware.</p>
+        <h3>No warranty, your risk</h3>
+        <p>Provided "as is", used at your own risk. Baritone automates the game — many servers ban that, so check first.</p>
       </div>
       <div>
-        <h3>Use on servers</h3>
-        <p>Baritone automates the game. Many servers forbid automation and punish it with a ban. Whether using it on a particular server is allowed is yours to find out — that is your responsibility, not the mod's.</p>
-      </div>
-      <div>
-        <h3>Third-party software</h3>
-        <p>Baritone (LGPL-3.0) as well as Litematica and MaLiLib (LGPLv3) are not part of this download and are governed by their own licences. For Minecraft itself, the <a href="https://www.minecraft.net/eula">Mojang EULA</a> applies.</p>
+        <h3>Third parties</h3>
+        <p>Baritone, Litematica, MaLiLib and Minecraft keep their own licences (<a href="https://www.minecraft.net/eula">Mojang EULA</a> included) — this is an unofficial project, unaffiliated with any of them.</p>
       </div>
       <div>
         <h3>Data</h3>
-        <p>The mod runs purely client-side, sends no network packets of its own and collects no telemetry. This page and the downloads are hosted by GitHub, whose servers log accesses.</p>
-      </div>
-      <div>
-        <h3>Not an official product</h3>
-        <p>Autobuild GUI is an unofficial fan project and is not connected to Mojang Studios, Microsoft, or the teams behind Baritone and Litematica.</p>
+        <p>Client-side only, no telemetry. Hosted on GitHub, which logs accesses like any site.</p>
       </div>
     </div>
     <p class="stamp">As of August 2026 · subject to change.</p>
@@ -652,7 +639,7 @@ footer{padding:clamp(48px,6vw,72px) 0 32px}
     <div class="fgrid">
       <div class="fabout">
         <a class="brand" href="#top"><span class="cube"></span>Autobuild GUI</a>
-        <p>A client-side Fabric mod for Minecraft 26.2. A menu for Litematica placements, built by Baritone.</p>
+        <p>A client-side Fabric mod for Minecraft 26.2 — a menu, built by Baritone.</p>
       </div>
       <div>
         <h4>Project</h4>
