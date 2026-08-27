@@ -2,6 +2,7 @@
 	"key.autobuildgui.open_menu": "Open Autobuild menu",
 	"gui.autobuildgui.title": "Autobuild",
 	"gui.autobuildgui.search": "Search...",
+	"gui.autobuildgui.placement_size": "%sx%sx%s - %s blocks",
 	"gui.autobuildgui.status_ready": "Ready",
 	"gui.autobuildgui.blocks_missing": "%s blocks missing",
 	"gui.autobuildgui.blocked_missing": "Build not started: %s blocks missing from your inventory.",

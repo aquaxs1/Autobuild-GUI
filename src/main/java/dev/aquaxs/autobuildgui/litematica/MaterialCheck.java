@@ -1,20 +1,19 @@
 package dev.aquaxs.autobuildgui.litematica;
 
 /**
- * Ergebnis der Inventar-Prüfung für ein Placement.
+ * The result of checking the inventory for one placement.
  *
- * @param missingBlocks Anzahl Blöcke, die dem Spieler-Inventar für einen kompletten
- *                      Bau fehlen. {@code 0}, wenn alles da ist.
- * @param skipped       {@code true}, wenn nicht geprüft wurde - im Creative-Modus, wo
- *                      Blöcke unbegrenzt verfügbar sind, oder wenn kein Spieler da ist.
- *                      Dann ist {@code missingBlocks} bedeutungslos und der Build darf
- *                      starten.
+ * @param missingBlocks how many blocks the player's inventory is short of a complete
+ *                      build. {@code 0} when everything is there.
+ * @param skipped       {@code true} when no check ran - in creative mode, where blocks
+ *                      are unlimited, or when there is no player. {@code missingBlocks}
+ *                      is then meaningless and the build may start.
  */
 public record MaterialCheck(int missingBlocks, boolean skipped) {
 	public static final MaterialCheck SKIPPED = new MaterialCheck(0, true);
 
 	/**
-	 * @return ob der Build starten darf.
+	 * @return whether the build may start.
 	 */
 	public boolean isSatisfied() {
 		return skipped || missingBlocks == 0;

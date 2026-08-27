@@ -17,9 +17,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The autobuild menu.
+ * The autobuild menu: the search box at the top, below it the scrollable list of loaded
+ * Litematica placements.
  *
- * <p>Phase 1: the title and the background only. The placement list arrives in phase 3.
+ * <p>On opening, each placement is checked for whether the inventory covers a complete
+ * build. Rows that fall short are locked. A click on a free row starts the build through
+ * {@link BaritoneAdapter} and closes the screen; the placement currently being built
+ * shows a running indicator with a ✕ to cancel when the screen is opened again.
  */
 public class AutobuildScreen extends Screen {
 	private static final int TITLE_TOP_MARGIN = 15;
@@ -35,9 +39,9 @@ public class AutobuildScreen extends Screen {
 	private int placementCount;
 
 	/**
-	 * Index des Placements, dessen Build wir gestartet haben. Baritone kennt selbst
-	 * nur "es baut gerade etwas", nicht welches Placement - deshalb merken wir uns das
-	 * hier. Statisch, damit es ein erneutes Öffnen des Screens überlebt.
+	 * Index of the placement whose build we started. Baritone itself only knows "it is
+	 * building something", not which placement - hence we remember it here. Static, so
+	 * that it survives the screen being opened again.
 	 */
 	private static int activeBuildIndex = PlacementListWidget.NO_ACTIVE_BUILD;
 
@@ -71,8 +75,8 @@ public class AutobuildScreen extends Screen {
 	}
 
 	private void refreshPlacements() {
-		// Ist der Build inzwischen durch (oder von aussen abgebrochen), soll die Zeile
-		// nicht weiter als "läuft" erscheinen.
+		// If the build has finished in the meantime (or was cancelled from outside), the
+		// row should no longer appear as "running".
 		if (activeBuildIndex != PlacementListWidget.NO_ACTIVE_BUILD && !BaritoneAdapter.isBuildActive()) {
 			activeBuildIndex = PlacementListWidget.NO_ACTIVE_BUILD;
 		}
@@ -82,8 +86,8 @@ public class AutobuildScreen extends Screen {
 
 		if (AutobuildConfig.get().materialCheckEnabled()) {
 			for (PlacementInfo placement : placements) {
-				// Synchron und proportional zum Schematic-Volumen - vertretbar, weil es
-				// nur beim Öffnen des Menüs passiert, nicht pro Frame.
+				// Synchronous and proportional to the schematic volume - acceptable
+				// because it only happens when the menu opens, not per frame.
 				checks.put(placement.index(), LitematicaAdapter.checkMaterials(placement.index()));
 			}
 		}
@@ -98,9 +102,9 @@ public class AutobuildScreen extends Screen {
 	}
 
 	private void onPlacementClicked(PlacementInfo placement) {
-		// Baritone bekommt nur den Index. Hat sich Litematicas Liste seit dem Öffnen
-		// geändert, zeigt derselbe Index auf ein anderes Bauwerk - lieber neu laden
-		// als das Falsche bauen.
+		// Baritone only gets the index. If Litematica's list has changed since the menu
+		// opened, the same index points at a different build - better to reload than to
+		// build the wrong thing.
 		if (!LitematicaAdapter.isStillCurrent(placement)) {
 			sendError(Component.translatable("gui.autobuildgui.placement_changed"));
 			refreshPlacements();
@@ -133,7 +137,7 @@ public class AutobuildScreen extends Screen {
 		String translationKey = switch (result) {
 			case BARITONE_MISSING -> "gui.autobuildgui.baritone_missing";
 			case BARITONE_WITHOUT_API -> "gui.autobuildgui.baritone_without_api";
-			case STARTED -> throw new IllegalStateException("bereits oben behandelt");
+			case STARTED -> throw new IllegalStateException("already handled above");
 		};
 
 		sendError(Component.translatable(translationKey));

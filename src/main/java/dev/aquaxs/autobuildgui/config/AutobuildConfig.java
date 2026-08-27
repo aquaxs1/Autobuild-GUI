@@ -12,12 +12,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Einstellungen des Mods, abgelegt als JSON in {@code config/autobuildgui.json}.
+ * The mod's settings, stored as JSON in {@code config/autobuildgui.json}.
  *
- * <p>Der Keybind steht bewusst <em>nicht</em> hier: Minecraft verwaltet Tastenbelegungen
- * bereits selbst und speichert sie in {@code options.txt}. Eine zweite Quelle in dieser
- * Datei würde beim nächsten Start die Änderung aus dem Steuerungs-Menü überschreiben.
- * Der Keybind wird über Optionen &rarr; Steuerung geändert.
+ * <p>The keybind deliberately does <em>not</em> live here: Minecraft already manages key
+ * bindings itself and stores them in {@code options.txt}. A second source in this file
+ * would overwrite the change made in the controls menu on the next start. The keybind is
+ * changed through Options &rarr; Controls.
  */
 public final class AutobuildConfig {
 	private static final String FILE_NAME = "autobuildgui.json";
@@ -25,15 +25,15 @@ public final class AutobuildConfig {
 
 	private static AutobuildConfig instance;
 
-	/** Ob sich das Menü schließt, sobald ein Build gestartet wurde. */
+	/** Whether the menu closes as soon as a build has been started. */
 	private boolean closeScreenOnBuildStart = true;
 
 	/**
-	 * Ob vor dem Baustart geprüft wird, ob das Inventar reicht.
+	 * Whether the inventory is checked before a build starts.
 	 *
-	 * <p>Die Prüfung durchläuft das komplette Schematic-Volumen im Speicher. Bei sehr
-	 * großen Schematics ist das ein spürbarer Einzel-Hitch beim Öffnen des Menüs - wer
-	 * das nicht will, schaltet sie hier ab und baut auf eigenes Risiko.
+	 * <p>The check walks the complete schematic volume in memory. For very large
+	 * schematics that is a noticeable one-off hitch when the menu opens - anyone who does
+	 * not want it turns it off here and builds at their own risk.
 	 */
 	private boolean materialCheckEnabled = true;
 
@@ -71,15 +71,15 @@ public final class AutobuildConfig {
 			AutobuildConfig loaded = GSON.fromJson(json, AutobuildConfig.class);
 
 			if (loaded == null) {
-				AutobuildGui.LOGGER.warn("{} ist leer, es gelten die Standardwerte.", path);
+				AutobuildGui.LOGGER.warn("{} is empty, the default values apply.", path);
 				return new AutobuildConfig();
 			}
 
 			return loaded;
 		} catch (IOException | JsonSyntaxException e) {
-			// Kaputte Config darf den Mod nicht lahmlegen: Standardwerte nehmen und die
-			// Datei in Ruhe lassen, damit der Nutzer sie selbst reparieren kann.
-			AutobuildGui.LOGGER.error("{} konnte nicht gelesen werden, es gelten die Standardwerte.", path, e);
+			// A broken config must not cripple the mod: take the defaults and leave the
+			// file alone, so the user can repair it themselves.
+			AutobuildGui.LOGGER.error("{} could not be read, the default values apply.", path, e);
 			return new AutobuildConfig();
 		}
 	}
@@ -91,7 +91,7 @@ public final class AutobuildConfig {
 			Files.createDirectories(path.getParent());
 			Files.writeString(path, GSON.toJson(this), StandardCharsets.UTF_8);
 		} catch (IOException e) {
-			AutobuildGui.LOGGER.error("{} konnte nicht geschrieben werden.", path, e);
+			AutobuildGui.LOGGER.error("{} could not be written.", path, e);
 		}
 	}
 }

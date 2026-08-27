@@ -6,18 +6,17 @@ import dev.aquaxs.autobuildgui.AutobuildGui;
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
- * Einziger Berührungspunkt mit Baritones API im gesamten Mod.
+ * The only point of contact with Baritone's API in the whole mod.
  *
- * <p>Baritone ist eine Soft-Dependency: {@link #isAvailable()} prüft
- * {@code FabricLoader.isModLoaded(...)}, bevor irgendeine Baritone-Klasse
- * angefasst wird. Zwei Mod-IDs gelten als gültig: {@code baritone} (Upstream
- * {@code cabaletta/baritone}) und {@code baritone-meteor} (die von
- * MeteorDevelopment abstammende Linie, zu der auch der Fork
- * {@code dysnasia/baritone-26.2} gehört) - beide per javap gegen echte JARs
- * geprüft.
+ * <p>Baritone is a soft dependency: {@link #isAvailable()} checks
+ * {@code FabricLoader.isModLoaded(...)} before any Baritone class is touched. Two mod
+ * IDs count as valid: {@code baritone} (upstream {@code cabaletta/baritone}) and
+ * {@code baritone-meteor} (the line descending from MeteorDevelopment, which the fork
+ * {@code dysnasia/baritone-26.2} belongs to as well) - both checked with javap against
+ * real JARs.
  *
- * <p>Zusätzlich abgesichert gegen Baritones {@code standalone}-Variante, in der
- * das {@code baritone.api.*}-Paket wegobfuskiert ist: siehe
+ * <p>Guarded on top of that against Baritone's {@code standalone} variant, in which the
+ * {@code baritone.api.*} package is obfuscated away: see
  * {@link BuildRequestResult#BARITONE_WITHOUT_API}.
  */
 public final class BaritoneAdapter {
@@ -39,12 +38,12 @@ public final class BaritoneAdapter {
 	}
 
 	/**
-	 * Startet den Bau des Placements mit dem gegebenen Index - derselbe Index,
-	 * unter dem Litematica es in seiner Placement-Liste führt (siehe
-	 * {@link dev.aquaxs.autobuildgui.litematica.PlacementInfo#index()}).
-	 * Ein bereits laufender Build wird von Baritone selbst durch den neuen
-	 * ersetzt (Standardverhalten von {@code buildOpenLitematic}, wie es auch
-	 * Baritones eigener {@code #litematica}-Befehl nutzt).
+	 * Starts building the placement with the given index - the same index Litematica
+	 * keeps it under in its placement list (see
+	 * {@link dev.aquaxs.autobuildgui.litematica.PlacementInfo#index()}). A build already
+	 * running is replaced by the new one by Baritone itself (the default behaviour of
+	 * {@code buildOpenLitematic}, which Baritone's own {@code #litematica} command uses
+	 * as well).
 	 */
 	public static BuildRequestResult buildPlacement(int placementIndex) {
 		if (!isAvailable()) {
@@ -54,31 +53,31 @@ public final class BaritoneAdapter {
 		try {
 			IBaritone baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
 
-			// Nur ein Build gleichzeitig: einen bereits laufenden sauber abbrechen,
-			// bevor der neue startet. buildOpenLitematic würde den Builder-Prozess
-			// zwar ohnehin neu belegen, aber ein laufender Pfad bliebe sonst aktiv.
+			// One build at a time: cancel one already running cleanly before the new one
+			// starts. buildOpenLitematic would take over the builder process anyway, but
+			// a path already being walked would otherwise stay active.
 			baritone.getPathingBehavior().cancelEverything();
 
 			baritone.getBuilderProcess().buildOpenLitematic(placementIndex);
 			return BuildRequestResult.STARTED;
 		} catch (LinkageError error) {
-			// Passiert bei der standalone-Variante: die Klassen sind da, aber die
-			// API-Methoden heissen dort a()/b()/c(). Deshalb LinkageError (u.a.
-			// NoSuchMethodError) statt Exception - und deshalb hier abgefangen,
-			// damit ein Klick nicht den Client mitreisst.
+			// Happens with the standalone variant: the classes are there, but the API
+			// methods are called a()/b()/c() in it. Hence LinkageError (NoSuchMethodError
+			// among others) rather than an exception - and hence caught here, so that a
+			// click does not take the client down with it.
 			AutobuildGui.LOGGER.error(
-					"Baritone ist installiert, aber ohne das baritone.api-Paket "
-							+ "(vermutlich die standalone-Variante). Bitte die api- oder "
-							+ "unoptimized-Variante verwenden.", error);
+					"Baritone is installed, but without the baritone.api package "
+							+ "(probably the standalone variant). Please use the api or "
+							+ "unoptimized variant.", error);
 			return BuildRequestResult.BARITONE_WITHOUT_API;
 		}
 	}
 
 	/**
-	 * Bricht einen laufenden Build ab. Nutzt denselben Weg wie Baritones eigener
-	 * {@code #stop}-Befehl.
+	 * Cancels a running build. Takes the same route as Baritone's own {@code #stop}
+	 * command.
 	 *
-	 * @return {@code false}, wenn Baritone fehlt oder keine nutzbare API hat.
+	 * @return {@code false} when Baritone is missing or has no usable API.
 	 */
 	public static boolean cancelBuild() {
 		if (!isAvailable()) {
@@ -89,14 +88,14 @@ public final class BaritoneAdapter {
 			BaritoneAPI.getProvider().getPrimaryBaritone().getPathingBehavior().cancelEverything();
 			return true;
 		} catch (LinkageError error) {
-			AutobuildGui.LOGGER.error("Abbruch fehlgeschlagen: Baritone ohne baritone.api-Paket.", error);
+			AutobuildGui.LOGGER.error("Cancel failed: Baritone without the baritone.api package.", error);
 			return false;
 		}
 	}
 
 	/**
-	 * @return ob Baritones Builder-Prozess gerade aktiv ist. {@code false}, wenn
-	 * Baritone fehlt oder keine nutzbare API hat.
+	 * @return whether Baritone's builder process is currently active. {@code false} when
+	 * Baritone is missing or has no usable API.
 	 */
 	public static boolean isBuildActive() {
 		if (!isAvailable()) {

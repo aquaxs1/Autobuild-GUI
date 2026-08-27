@@ -14,8 +14,8 @@ public class AutobuildGuiClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		// Früh laden, damit config/autobuildgui.json schon nach dem ersten Start
-		// existiert und nicht erst, wenn das Menü zum ersten Mal geöffnet wird.
+		// Load early, so that config/autobuildgui.json exists right after the first
+		// start rather than only once the menu is opened for the first time.
 		AutobuildConfig.get();
 
 		openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
@@ -34,8 +34,8 @@ public class AutobuildGuiClient implements ClientModInitializer {
 				pressed = true;
 			}
 
-			// Nur in einer Welt: ohne Spieler gäbe es weder Placements noch ein
-			// Inventar zu prüfen, und der Material-Check bräuchte einen Spieler.
+			// Only inside a world: without a player there would be neither placements nor
+			// an inventory to check, and the material check needs a player.
 			if (pressed && client.gui.screen() == null && client.player != null && client.level != null) {
 				client.setScreenAndShow(new AutobuildScreen());
 			}
@@ -43,6 +43,6 @@ public class AutobuildGuiClient implements ClientModInitializer {
 
 		AutobuildCommands.register();
 
-		AutobuildGui.LOGGER.info("Autobuild GUI initialisiert");
+		AutobuildGui.LOGGER.info("Autobuild GUI initialised");
 	}
 }

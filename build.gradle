@@ -10,8 +10,8 @@ base {
 }
 
 repositories {
-	// Loom fuegt die Minecraft-/Fabric-Repositories selbst hinzu.
-	// Baritone hat kein publiziertes Maven-Artefakt fuer 26.2, deshalb libs/.
+	// Loom adds the Minecraft/Fabric repositories itself.
+	// Baritone has no published Maven artefact for 26.2, hence libs/.
 	maven {
 		name = 'masa'
 		url = 'https://masa.dy.fi/maven/sakura-ryoko'
@@ -24,12 +24,12 @@ dependencies {
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-	// Litematica und malilib sind Soft-Dependencies: nur zur Compile-Zeit auf dem
-	// Classpath (fuer typsicheren Adapter-Code), zur Laufzeit prueft
-	// FabricLoader.isModLoaded(...), bevor die Klassen angefasst werden.
-	// conditional-mixin-fabric wird ausgeschlossen: es liegt nur auf
-	// maven.fallenbreath.me (nicht freigegeben) und wird fuer unseren
-	// Adapter-Code nicht gebraucht - Litematica selbst bringt es zur Laufzeit mit.
+	// Litematica and malilib are soft dependencies: on the classpath at compile time
+	// only (for type-safe adapter code); at runtime FabricLoader.isModLoaded(...)
+	// checks before any of their classes are touched.
+	// conditional-mixin-fabric is excluded: it only lives on maven.fallenbreath.me
+	// (not on the allow list) and our adapter code does not need it - Litematica
+	// itself brings it along at runtime.
 	compileOnly("fi.dy.masa.litematica:litematica-fabric-${project.minecraft_version}:${project.litematica_version}") {
 		exclude group: 'me.fallenbreath', module: 'conditional-mixin-fabric'
 	}
@@ -37,9 +37,9 @@ dependencies {
 		exclude group: 'me.fallenbreath', module: 'conditional-mixin-fabric'
 	}
 
-	// Baritone ist eine Soft-Dependency: nur zur Compile-Zeit auf dem Classpath,
-	// zur Laufzeit liefert der separat installierte Baritone-Mod die Klassen.
-	// Das JAR wird NICHT eingecheckt (LGPL-3.0 - einbinden, nicht vendorn).
+	// Baritone is a soft dependency: on the classpath at compile time only; at runtime
+	// the separately installed Baritone mod provides the classes.
+	// The JAR is NOT checked in (LGPL-3.0 - link against it, do not vendor it).
 	compileOnly fileTree(dir: 'libs', include: ['*.jar'])
 }
 

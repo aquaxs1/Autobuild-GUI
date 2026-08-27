@@ -20,14 +20,14 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
- * Scrollbare Liste der Litematica-Placements.
+ * The scrollable list of Litematica placements.
  *
- * <p>Jede Zeile zeigt rechts einen Status: „Bereit", „N Blöcke fehlen" (dann ist der
- * Klick gesperrt) oder - für das gerade gebaute Placement - eine Laufanzeige mit ✕ zum
- * Abbrechen.
+ * <p>Every row shows a status on the right: "Ready", "N blocks missing" (the click is
+ * locked then) or - for the placement currently being built - a running indicator with a
+ * ✕ to cancel.
  */
 public class PlacementListWidget extends ObjectSelectionList<PlacementListWidget.Entry> {
-	/** Kein Placement wird gerade gebaut. */
+	/** No placement is currently being built. */
 	public static final int NO_ACTIVE_BUILD = -1;
 
 	private List<PlacementInfo> allPlacements = List.of();
@@ -53,9 +53,9 @@ public class PlacementListWidget extends ObjectSelectionList<PlacementListWidget
 	}
 
 	/**
-	 * @param placements     die anzuzeigenden Placements
-	 * @param materialChecks Inventar-Prüfung je Placement-Index; Einträge dürfen fehlen,
-	 *                       dann gilt die Zeile als bereit.
+	 * @param placements     the placements to show
+	 * @param materialChecks the inventory check per placement index; entries may be
+	 *                       absent, in which case the row counts as ready.
 	 */
 	public void setPlacements(List<PlacementInfo> placements, Map<Integer, MaterialCheck> materialChecks) {
 		this.allPlacements = placements;
@@ -92,9 +92,9 @@ public class PlacementListWidget extends ObjectSelectionList<PlacementListWidget
 
 	@Override
 	public int getRowWidth() {
-		// Standardmäßig sind Zeilen 220px breit und zentriert - für Name, Größe,
-		// Blockanzahl und Status-Badge nebeneinander brauchen wir die volle Breite,
-		// abzüglich der Scrollbar rechts.
+		// By default rows are 220px wide and centred - for name, size, block count and
+		// status badge side by side we need the full width, minus the scrollbar on the
+		// right.
 		return getWidth() - AbstractScrollArea.SCROLLBAR_WIDTH - 4;
 	}
 
@@ -113,9 +113,9 @@ public class PlacementListWidget extends ObjectSelectionList<PlacementListWidget
 		private static final int BAR_FILL_COLOR = 0xFF4CAF50;
 		private static final int CANCEL_COLOR = 0xFFFF5555;
 
-		/** Volle Runde des Laufbalkens in Millisekunden. */
+		/** One full round of the running bar, in milliseconds. */
 		private static final long BAR_CYCLE_MILLIS = 1400L;
-		/** Breite des wandernden Segments, als Anteil der Balkenbreite. */
+		/** Width of the travelling segment, as a fraction of the bar width. */
 		private static final float BAR_SEGMENT_FRACTION = 0.35f;
 
 		private final PlacementInfo info;
@@ -133,8 +133,8 @@ public class PlacementListWidget extends ObjectSelectionList<PlacementListWidget
 		}
 
 		/**
-		 * @return Anzahl fehlender Blöcke, oder 0 wenn nichts fehlt bzw. nicht geprüft
-		 * wurde.
+		 * @return the number of missing blocks, or 0 when nothing is missing or no check
+		 * ran.
 		 */
 		public int missingBlocks() {
 			MaterialCheck check = materialChecks.get(info.index());
@@ -194,16 +194,17 @@ public class PlacementListWidget extends ObjectSelectionList<PlacementListWidget
 
 			int nameMaxWidth = Math.max(0, statusLeft - textX - TEXT_PADDING);
 			String displayName = font.plainSubstrByWidth(info.name(), nameMaxWidth);
-			String subtitle = "%dx%dx%d - %d Blöcke".formatted(info.sizeX(), info.sizeY(), info.sizeZ(), info.totalBlocks());
+			Component subtitle = Component.translatable("gui.autobuildgui.placement_size",
+					info.sizeX(), info.sizeY(), info.sizeZ(), info.totalBlocks());
 
 			graphics.text(font, displayName, textX, nameY, 0xFFFFFFFF);
-			graphics.text(font, Component.literal(subtitle).withStyle(ChatFormatting.GRAY), textX, subtitleY, 0xFFFFFFFF);
+			graphics.text(font, subtitle.copy().withStyle(ChatFormatting.GRAY), textX, subtitleY, 0xFFFFFFFF);
 		}
 
 		/**
-		 * Zeichnet den Status-Text rechts.
+		 * Draws the status text on the right.
 		 *
-		 * @return linke Kante des Status, damit der Name davor abgeschnitten wird.
+		 * @return the left edge of the status, so the name is truncated before it.
 		 */
 		private int extractBadge(GuiGraphicsExtractor graphics, net.minecraft.client.gui.Font font, int nameY) {
 			int missing = missingBlocks();
@@ -217,20 +218,20 @@ public class PlacementListWidget extends ObjectSelectionList<PlacementListWidget
 		}
 
 		/**
-		 * Zeichnet Laufbalken und ✕ für das gerade gebaute Placement.
+		 * Draws the running bar and the ✕ for the placement currently being built.
 		 *
-		 * <p>Der Balken ist bewusst unbestimmt (wanderndes Segment), keine Prozentzahl:
-		 * Baritones {@code IBuilderProcess} bietet keinerlei Fortschritts-Auskunft, und
-		 * eine erfundene Prozentzahl wäre schlechter als gar keine.
+		 * <p>The bar is deliberately indeterminate (a travelling segment), not a
+		 * percentage: Baritone's {@code IBuilderProcess} offers no progress information
+		 * at all, and a made-up percentage would be worse than none.
 		 *
-		 * @return linke Kante des Statusbereichs.
+		 * @return the left edge of the status area.
 		 */
 		private int extractRunningStatus(GuiGraphicsExtractor graphics, int nameY) {
 			int cancelX = cancelX();
 			int cancelY = cancelY();
 
-			// ✕ als zwei gekreuzte Balken - kein Font-Glyph, damit die Trefferfläche
-			// exakt zum gezeichneten Symbol passt.
+			// The ✕ as two crossed bars - not a font glyph, so that the hit area matches
+			// the drawn symbol exactly.
 			for (int i = 0; i < CANCEL_SIZE; i++) {
 				graphics.fill(cancelX + i, cancelY + i, cancelX + i + 1, cancelY + i + 1, CANCEL_COLOR);
 				graphics.fill(cancelX + i, cancelY + CANCEL_SIZE - 1 - i,

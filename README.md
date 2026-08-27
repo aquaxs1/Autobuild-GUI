@@ -1,103 +1,103 @@
 # Autobuild GUI
 
-Client-seitiger Fabric-Mod für **Minecraft 26.2**. Ein Hotkey öffnet ein Menü mit allen
-aktuell in Litematica geladenen Schematic-Placements; ein Klick auf eine Zeile lässt
-**Baritone** genau dieses Placement bauen.
+A client-side Fabric mod for **Minecraft 26.2**. A hotkey opens a menu listing every
+schematic placement currently loaded in Litematica; a click on a row makes **Baritone**
+build exactly that placement.
 
-Der Mod ist ausschließlich GUI und Glue-Code. Pathfinding und Blockplatzierung macht
-komplett Baritone, das Einlesen der Schematics komplett Litematica.
+The mod is GUI and glue code, nothing else. Pathfinding and block placement are entirely
+Baritone's job, reading the schematics entirely Litematica's.
 
 ---
 
 ## Website
 
-Die Projektseite — Download, Kurzbeschreibung, Interface-Ansicht und Nutzungsbedingungen —
-liegt als statische Seite in [`docs/`](docs/index.html). Veröffentlichen über
-**Settings → Pages → Source: „Deploy from a branch", Branch `main`, Ordner `/docs`**;
-danach erreichbar unter `https://aquaxs1.github.io/Autobuild-GUI/`.
+The project page — download, a short description, a look at the interface and the terms
+of use — lives as a static page in [`docs/`](docs/index.html). Publish it through
+**Settings → Pages → Source: "Deploy from a branch", branch `main`, folder `/docs`**;
+it is then reachable at `https://aquaxs1.github.io/Autobuild-GUI/`.
 
-Der Download-Button zeigt auf das Release-Asset `autobuild-gui-0.1.0.jar`. Bei einem neuen
-Release müssen in `docs/index.html` die Versionsnummer, die Dateigröße und der SHA-256
-angepasst werden.
-
----
-
-## Was der Mod tut
-
-- **`B`** (frei belegbar) öffnet das Menü.
-- Liste aller geladenen Placements mit Name, Größe, Blockanzahl und Status.
-- Suchfeld filtert nach Name.
-- **Material-Check vor dem Start:** reicht das Inventar nicht, zeigt die Zeile
-  „N Blöcke fehlen" und der Klick ist gesperrt — statt mittendrin steckenzubleiben.
-- **Klick startet den Build** für genau dieses Placement, das Menü schließt sich.
-- Das laufende Placement zeigt beim erneuten Öffnen eine Laufanzeige mit **✕** zum
-  Abbrechen. Es läuft immer nur ein Build; ein neuer bricht den alten sauber ab.
-- Fehlt Litematica oder Baritone, öffnet sich das Menü trotzdem und sagt, was fehlt.
+The download button points at the release asset `autobuild-gui-0.1.0.jar`. On a new
+release, the version number, the file size and the SHA-256 in `docs/index.html` have to
+be updated.
 
 ---
 
-## Benötigte Mods
+## What the mod does
 
-| Mod | Version | Pflicht |
+- **`B`** (rebindable) opens the menu.
+- A list of every loaded placement with name, size, block count and status.
+- The search box filters by name.
+- **A material check before the start:** if the inventory falls short, the row reads
+  "N blocks missing" and the click is locked — rather than getting stuck halfway through.
+- **A click starts the build** for exactly that placement, and the menu closes.
+- The placement being built shows a running indicator with an **✕** to cancel when the
+  menu is opened again. Only ever one build runs; a new one cancels the old one cleanly.
+- If Litematica or Baritone is missing, the menu still opens and says what is missing.
+
+---
+
+## Required mods
+
+| Mod | Version | Required |
 |---|---|---|
-| Fabric Loader | ≥ `0.19.3` | ja |
-| Fabric API | `0.156.0+26.2` | ja |
-| [Litematica](https://www.curseforge.com/minecraft/mc-mods/litematica) | `26.2-0.28.4` oder neuer | für die Placement-Liste |
-| [MaLiLib](https://www.curseforge.com/minecraft/mc-mods/malilib) | `26.2-0.29.2` oder neuer | von Litematica benötigt |
-| Baritone | siehe unten | für das Bauen |
-| Java | 25 | ja |
+| Fabric Loader | ≥ `0.19.3` | yes |
+| Fabric API | `0.156.0+26.2` | yes |
+| [Litematica](https://www.curseforge.com/minecraft/mc-mods/litematica) | `26.2-0.28.4` or newer | for the placement list |
+| [MaLiLib](https://www.curseforge.com/minecraft/mc-mods/malilib) | `26.2-0.29.2` or newer | needed by Litematica |
+| Baritone | see below | for the building |
+| Java | 25 | yes |
 
-Ohne Litematica bzw. Baritone startet der Mod trotzdem und zeigt eine Meldung statt
-abzustürzen — beide sind echte Soft-Dependencies.
+Without Litematica or Baritone the mod still starts and shows a message instead of
+crashing — both are genuine soft dependencies.
 
-### Baritone — bitte die richtige Variante
+### Baritone — please the right variant
 
-> **Empfohlen:** [meteorclient.com](https://meteorclient.com) → Download-Button
-> **„\*Baritone [26.2]"**
+> **Recommended:** [meteorclient.com](https://meteorclient.com) → the download button
+> **"\*Baritone [26.2]"**
 >
-> Das ist der eigenständige Baritone-Fork von MeteorDevelopment. Er ist **kein**
-> Bestandteil des vollen Meteor Clients — der Utility-Mod muss *nicht* installiert
-> werden. Einfach die JAR in den `mods`-Ordner legen.
+> That is the standalone Baritone fork by MeteorDevelopment. It is **not** a part of the
+> full Meteor Client — the utility mod does *not* have to be installed. Just drop the JAR
+> into the `mods` folder.
 
-**Warum das wichtig ist:** Baritone wird in drei Varianten gebaut, und **eine davon
-funktioniert mit diesem Mod nicht**:
+**Why this matters:** Baritone is built in three variants, and **one of them does not work
+with this mod**:
 
-| Variante | `baritone.api.*` | nutzbar |
+| Variant | `baritone.api.*` | Usable |
 |---|---|---|
-| `api` | erhalten | ✅ |
-| `unoptimized` | erhalten | ✅ |
-| `standalone` | wegobfuskiert | ❌ |
+| `api` | preserved | ✅ |
+| `unoptimized` | preserved | ✅ |
+| `standalone` | obfuscated away | ❌ |
 
-Im `standalone`-Build entfernt Baritones eigener ProGuard-Lauf gezielt die Keep-Regel
-für das API-Paket (`scripts/proguard.pro`: `-keep class baritone.api.** { *; }
-# this is the keep api`). Dort heißen alle API-Methoden nur noch `a()`, `b()`, `c()` —
-kein anderer Mod kann sie mehr aufrufen.
+In the `standalone` build, Baritone's own ProGuard run deliberately removes the keep rule
+for the API package (`scripts/proguard.pro`: `-keep class baritone.api.** { *; }
+# this is the keep api`). There every API method is called just `a()`, `b()`, `c()` — no
+other mod can call them any more.
 
-Landet trotzdem ein `standalone`-Build im `mods`-Ordner, stürzt nichts ab: der Klick
-meldet dann *„Diese Baritone-Variante hat kein API-Paket"*.
+If a `standalone` build ends up in the `mods` folder anyway, nothing crashes: the click
+then reports *"This Baritone build has no API package"*.
 
 **Alternative:** [`dysnasia/baritone-26.2`](https://github.com/dysnasia/baritone-26.2).
-Achtung — der aktuell dort veröffentlichte Release (Tag `26.2`) **ist** die
-`standalone`-Variante und funktioniert mit diesem Mod **nicht**. Nur brauchbar, wenn
-man dort eine `api`- oder `unoptimized`-Variante findet oder selbst baut.
+Careful — the release published there right now (tag `26.2`) **is** the `standalone`
+variant and does **not** work with this mod. Only useful if you find an `api` or
+`unoptimized` variant there, or build one yourself.
 
 ---
 
 ## Installation
 
-1. Fabric Loader für Minecraft 26.2 installieren.
-2. Diese JARs in den `mods`-Ordner legen:
+1. Install Fabric Loader for Minecraft 26.2.
+2. Drop these JARs into the `mods` folder:
    - Fabric API
    - MaLiLib + Litematica
-   - Baritone (siehe oben — *nicht* die `standalone`-Variante)
+   - Baritone (see above — *not* the `standalone` variant)
    - `autobuild-gui-<version>.jar`
-3. Minecraft starten, Welt betreten, **`B`** drücken.
+3. Start Minecraft, enter a world, press **`B`**.
 
 ---
 
-## Konfiguration
+## Configuration
 
-`config/autobuildgui.json`, wird beim ersten Start mit Standardwerten angelegt:
+`config/autobuildgui.json`, created with default values on the first start:
 
 ```json
 {
@@ -106,70 +106,69 @@ man dort eine `api`- oder `unoptimized`-Variante findet oder selbst baut.
 }
 ```
 
-| Schlüssel | Bedeutung |
+| Key | Meaning |
 |---|---|
-| `closeScreenOnBuildStart` | Ob sich das Menü schließt, sobald ein Build gestartet wurde. `false` lässt es offen, damit man die Laufanzeige direkt sieht. |
-| `materialCheckEnabled` | Ob vor dem Start geprüft wird, ob das Inventar reicht. Die Prüfung läuft einmal beim Öffnen des Menüs über das komplette Schematic-Volumen; bei sehr großen Schematics ist das ein spürbarer Hitch. `false` schaltet sie ab — dann startet jeder Build ungeprüft. |
+| `closeScreenOnBuildStart` | Whether the menu closes as soon as a build has been started. `false` leaves it open so you can watch the running indicator directly. |
+| `materialCheckEnabled` | Whether the inventory is checked before the start. The check runs once when the menu opens, across the complete schematic volume; for very large schematics that is a noticeable hitch. `false` turns it off — every build then starts unchecked. |
 
-**Der Keybind steht bewusst nicht in dieser Datei.** Minecraft verwaltet
-Tastenbelegungen selbst und speichert sie in `options.txt`; eine zweite Quelle würde die
-Änderung aus dem Steuerungs-Menü beim nächsten Start überschreiben. Der Hotkey wird über
-**Optionen → Steuerung → „Autobuild-Menü öffnen"** geändert.
+**The keybind deliberately does not live in this file.** Minecraft manages key bindings
+itself and stores them in `options.txt`; a second source would overwrite the change made
+in the controls menu on the next start. The hotkey is changed through
+**Options → Controls → "Open Autobuild menu"**.
 
 ---
 
-## Selbst bauen
+## Building it yourself
 
-Voraussetzung: **JDK 25**.
+Prerequisite: **JDK 25**.
 
-Baritone hat für 26.2 kein Maven-Artefakt, deshalb wird die JAR lokal eingebunden:
+Baritone has no Maven artefact for 26.2, so the JAR is wired in locally:
 
 ```bash
 git clone https://github.com/aquaxs1/Autobuild-GUI.git
 cd Autobuild-GUI
 
 mkdir -p libs
-# Baritone-JAR (api- oder unoptimized-Variante, siehe oben) nach libs/ legen:
+# put the Baritone JAR (api or unoptimized variant, see above) into libs/:
 cp ~/Downloads/baritone-26.2.jar libs/
 
 ./gradlew build
 ```
 
-Ergebnis: `build/libs/autobuild-gui-<version>.jar`.
+Result: `build/libs/autobuild-gui-<version>.jar`.
 
-Zum Testen im Entwicklungs-Client: `./gradlew runClient`.
+To test it in the development client: `./gradlew runClient`.
 
-Die Baritone-JAR wird nur zur Compile-Zeit gebraucht (`compileOnly`) und ist per
-`.gitignore` ausgeschlossen — Baritone steht unter LGPL-3.0 und wird eingebunden, nicht
-mitgeliefert. Litematica und MaLiLib kommen automatisch als `compileOnly` von
-`masa.dy.fi`.
-
----
-
-## Bekannte Einschränkungen
-
-- **Der Fortschrittsbalken zeigt keine Prozentzahl.** Baritones `IBuilderProcess` bietet
-  keinerlei Fortschritts-Auskunft, deshalb ist die Anzeige bewusst unbestimmt
-  („läuft") statt eine erfundene Zahl zu zeigen. Eine echte Prozentzahl bräuchte
-  Litematicas `SchematicVerifier`, der asynchron läuft und eigene Chat-Meldungen
-  erzeugt — vorgemerkt für nach dem ersten funktionierenden Release.
-- **Der Material-Check ist bei angefangenen Bauten pessimistisch.** Litematicas
-  synchrone Materialliste zählt den Bedarf für einen Bau von Null aus, ohne die Welt zu
-  betrachten. Ein halb fertiges Placement verlangt also mehr Material, als tatsächlich
-  noch nötig ist.
-- **Der Check läuft beim Öffnen des Menüs, nicht laufend.** Ändert sich das Inventar bei
-  offenem Menü, sind die Badges veraltet. Der Klick prüft aber erneut, baut also nie auf
-  veralteten Daten.
-- **Im Creative-Modus wird nicht geprüft.** Litematicas Materialermittlung kennt keinen
-  Creative-Sonderfall und würde dort alles als fehlend melden.
-- Nur Client-Seite, keine Netzwerkpakete. Auf Servern gelten dieselben Regeln wie für
-  Baritone selbst.
-
-Details und die dahinterliegende API-Recherche: [`docs/RESEARCH.md`](docs/RESEARCH.md).
+The Baritone JAR is only needed at compile time (`compileOnly`) and is excluded through
+`.gitignore` — Baritone is licensed LGPL-3.0 and is linked against, not shipped along.
+Litematica and MaLiLib come in automatically as `compileOnly` from `masa.dy.fi`.
 
 ---
 
-## Lizenz
+## Known limitations
 
-MIT — siehe [`LICENSE`](LICENSE). Baritone (LGPL-3.0) und Litematica (LGPLv3) werden nur
-als externe Abhängigkeiten eingebunden, ihr Quellcode ist hier nicht enthalten.
+- **The progress bar shows no percentage.** Baritone's `IBuilderProcess` offers no
+  progress information at all, so the indicator is deliberately indeterminate
+  ("running") rather than showing a made-up number. A real percentage would need
+  Litematica's `SchematicVerifier`, which runs asynchronously and produces chat messages
+  of its own — noted down for after the first working release.
+- **The material check is pessimistic on builds already started.** Litematica's
+  synchronous material list counts what a build from zero needs, without looking at the
+  world. A half-finished placement therefore asks for more material than is actually
+  still needed.
+- **The check runs when the menu opens, not continuously.** If the inventory changes
+  while the menu is open, the badges are stale. The click does check again, though, so it
+  never builds on stale data.
+- **No check in creative mode.** Litematica's material accounting has no special case for
+  creative and would report everything as missing there.
+- Client-side only, no network packets. On servers the same rules apply as for Baritone
+  itself.
+
+Details and the API research behind it: [`docs/RESEARCH.md`](docs/RESEARCH.md).
+
+---
+
+## Licence
+
+MIT — see [`LICENSE`](LICENSE). Baritone (LGPL-3.0) and Litematica (LGPLv3) are wired in
+as external dependencies only; their source is not contained here.

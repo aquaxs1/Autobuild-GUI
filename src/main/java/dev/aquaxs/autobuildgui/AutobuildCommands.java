@@ -12,9 +12,9 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 
 /**
- * Phase 2: gibt die von {@link LitematicaAdapter} gelesene Placement-Liste per
- * Chat und Log aus, damit der Adapter ohne GUI testbar ist. Der Befehl entfällt
- * nicht in Phase 3 - er bleibt als Diagnose-Werkzeug nützlich.
+ * Phase 2: prints the placement list read by {@link LitematicaAdapter} to chat and to
+ * the log, so the adapter can be tested without a GUI. The command does not go away in
+ * phase 3 - it stays useful as a diagnostic tool.
  */
 public final class AutobuildCommands {
 	private AutobuildCommands() {
@@ -34,23 +34,23 @@ public final class AutobuildCommands {
 
 	private static void listPlacements(FabricClientCommandSource source) {
 		if (!LitematicaAdapter.isAvailable()) {
-			source.sendError(Component.literal("Litematica nicht gefunden."));
-			AutobuildGui.LOGGER.warn("autobuildgui list: Litematica ist nicht geladen");
+			source.sendError(Component.literal("Litematica not found."));
+			AutobuildGui.LOGGER.warn("autobuildgui list: Litematica is not loaded");
 			return;
 		}
 
 		List<PlacementInfo> placements = LitematicaAdapter.getPlacements();
 
 		if (placements.isEmpty()) {
-			source.sendFeedback(Component.literal("Keine Schematic-Placements geladen."));
-			AutobuildGui.LOGGER.info("autobuildgui list: keine Placements geladen");
+			source.sendFeedback(Component.literal("No schematic placements loaded."));
+			AutobuildGui.LOGGER.info("autobuildgui list: no placements loaded");
 			return;
 		}
 
-		source.sendFeedback(Component.literal(placements.size() + " Placement(s) geladen:"));
+		source.sendFeedback(Component.literal(placements.size() + " placement(s) loaded:"));
 
 		for (PlacementInfo placement : placements) {
-			String line = "[%d] %s - %dx%dx%d, %d Blöcke, Ursprung %s".formatted(
+			String line = "[%d] %s - %dx%dx%d, %d blocks, origin %s".formatted(
 					placement.index(),
 					placement.name(),
 					placement.sizeX(), placement.sizeY(), placement.sizeZ(),

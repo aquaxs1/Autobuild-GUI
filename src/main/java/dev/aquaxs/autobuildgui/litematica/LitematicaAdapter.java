@@ -15,12 +15,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Einziger Berührungspunkt mit Litematicas Klassen im gesamten Mod.
+ * The only point of contact with Litematica's classes in the whole mod.
  *
- * <p>Litematica ist eine Soft-Dependency: {@link #isAvailable()} prüft
- * {@code FabricLoader.isModLoaded(...)}, bevor irgendeine Litematica-Klasse
- * angefasst wird. Aufrufer außerhalb dieses Pakets kennen nur {@link PlacementInfo}
- * und Minecraft-eigene Typen, nie Litematicas API direkt.
+ * <p>Litematica is a soft dependency: {@link #isAvailable()} checks
+ * {@code FabricLoader.isModLoaded(...)} before any Litematica class is touched. Callers
+ * outside this package only ever see {@link PlacementInfo} and Minecraft's own types,
+ * never Litematica's API directly.
  */
 public final class LitematicaAdapter {
 	private static final String MOD_ID = "litematica";
@@ -33,10 +33,9 @@ public final class LitematicaAdapter {
 	}
 
 	/**
-	 * @return alle aktuell in Litematica geladenen Schematic-Placements, in der
-	 * Reihenfolge, in der Litematicas eigene Placement-Liste (und damit Baritones
-	 * {@code buildOpenLitematic(int)}) sie erwartet. Leer, falls Litematica nicht
-	 * geladen ist.
+	 * @return every schematic placement currently loaded in Litematica, in the order
+	 * Litematica's own placement list (and hence Baritone's
+	 * {@code buildOpenLitematic(int)}) expects them. Empty when Litematica is not loaded.
 	 */
 	public static List<PlacementInfo> getPlacements() {
 		if (!isAvailable()) {
@@ -54,13 +53,13 @@ public final class LitematicaAdapter {
 	}
 
 	/**
-	 * Prüft, ob der in {@code info} festgehaltene Index in Litematicas Placement-Liste
-	 * noch auf dasselbe Placement zeigt.
+	 * Checks whether the index recorded in {@code info} still points at the same
+	 * placement in Litematica's placement list.
 	 *
-	 * <p>Wichtig, weil Baritone nur den Index bekommt: ändert der Nutzer die Liste,
-	 * während unser Menü offen steht (Placement laden, löschen, umbenennen, verschieben),
-	 * zeigt derselbe Index anschließend auf ein anderes Bauwerk. Ohne diese Prüfung
-	 * würde ein Klick klaglos das Falsche bauen.
+	 * <p>It matters because Baritone only gets the index: if the user changes the list
+	 * while our menu is open (loading, deleting, renaming, moving a placement), the same
+	 * index afterwards points at a different build. Without this check a click would
+	 * happily build the wrong thing.
 	 */
 	public static boolean isStillCurrent(PlacementInfo info) {
 		if (!isAvailable()) {
@@ -78,18 +77,18 @@ public final class LitematicaAdapter {
 	}
 
 	/**
-	 * Prüft synchron, ob das Inventar des Spielers für einen kompletten Bau reicht.
+	 * Checks synchronously whether the player's inventory covers a complete build.
 	 *
-	 * <p>Nutzt Litematicas eigene Material-Ermittlung
+	 * <p>Uses Litematica's own material accounting
 	 * ({@code MaterialListUtils.createMaterialListFor} +
-	 * {@code updateAvailableCounts}) und nicht Baritones
-	 * {@code getApproxPlaceable()} - letzteres liefert laut eigenem Javadoc erst
-	 * Daten, während der Build schon läuft, und taugt für einen Vorab-Check nicht.
+	 * {@code updateAvailableCounts}) rather than Baritone's {@code getApproxPlaceable()}
+	 * - the latter, by its own javadoc, only returns data while the build is already
+	 * running, and is no good for a check beforehand.
 	 *
-	 * <p>Achtung: Litematicas Liste zählt den Bedarf für einen Bau von Null aus, ohne
-	 * die Welt zu betrachten. Bei einem teilweise gebauten Placement fällt der
-	 * Fehlbestand daher pessimistisch aus. Die Kosten sind proportional zum
-	 * Schematic-Volumen (reiner In-Memory-Durchlauf).
+	 * <p>Careful: Litematica's list counts what a build from zero needs, without looking
+	 * at the world. For a partially built placement the shortfall therefore comes out
+	 * pessimistic. The cost is proportional to the schematic volume (a pure in-memory
+	 * pass).
 	 */
 	public static MaterialCheck checkMaterials(int placementIndex) {
 		if (!isAvailable()) {
@@ -98,9 +97,9 @@ public final class LitematicaAdapter {
 
 		LocalPlayer player = Minecraft.getInstance().player;
 
-		// Im Creative-Modus sind Blöcke unbegrenzt verfügbar, Litematica hat dafür
-		// aber keine Sonderbehandlung - es zählt stumpf das Inventar. Ohne diese
-		// Abkürzung wäre im Creative alles als "fehlt" markiert.
+		// In creative mode blocks are unlimited, but Litematica has no special case for
+		// that - it bluntly counts the inventory. Without this shortcut everything would
+		// be marked "missing" in creative.
 		if (player == null || player.isCreative()) {
 			return MaterialCheck.SKIPPED;
 		}
@@ -118,9 +117,9 @@ public final class LitematicaAdapter {
 		int missing = 0;
 
 		for (MaterialListEntry entry : entries) {
-			// getCountMissing() ist auf diesem Pfad gleich getCountTotal() (Litematica
-			// klont die Total-Map als Missing-Map, weil kein Weltvergleich stattfindet).
-			// Der echte Fehlbestand ergibt sich erst gegen das Inventar.
+			// getCountMissing() equals getCountTotal() on this path (Litematica clones the
+			// total map as the missing map, because no comparison against the world takes
+			// place). The real shortfall only emerges against the inventory.
 			missing += Math.max(0, entry.getCountTotal() - entry.getCountAvailable());
 		}
 

@@ -1,25 +1,24 @@
 package dev.aquaxs.autobuildgui.baritone;
 
 /**
- * Ergebnis eines Build-Starts über {@link BaritoneAdapter#buildPlacement(int)}.
+ * The result of starting a build through {@link BaritoneAdapter#buildPlacement(int)}.
  */
 public enum BuildRequestResult {
-	/** Baritone hat den Build übernommen. */
+	/** Baritone has taken the build. */
 	STARTED,
 
-	/** Kein Baritone installiert. */
+	/** No Baritone installed. */
 	BARITONE_MISSING,
 
 	/**
-	 * Baritone ist installiert, aber ohne das öffentliche {@code baritone.api.*}-Paket.
+	 * Baritone is installed, but without the public {@code baritone.api.*} package.
 	 *
-	 * <p>Baritone wird in drei Varianten ausgeliefert; die {@code standalone}-Variante
-	 * entfernt beim ProGuard-Lauf gezielt die Keep-Regel für {@code baritone.api.**}
-	 * (siehe {@code scripts/proguard.pro} und {@code ProguardTask.generateConfigs()}
-	 * im Baritone-Quellcode). Dort heißen alle API-Methoden nur noch {@code a()},
-	 * {@code b()}, {@code c()}, und der Aufruf schlägt zur Laufzeit mit einem
-	 * {@link LinkageError} fehl. Nur die {@code api}- und die
-	 * {@code unoptimized}-Variante sind für andere Mods nutzbar.
+	 * <p>Baritone ships in three variants; the {@code standalone} one deliberately drops
+	 * the keep rule for {@code baritone.api.**} during its ProGuard run (see
+	 * {@code scripts/proguard.pro} and {@code ProguardTask.generateConfigs()} in the
+	 * Baritone source). There every API method is called just {@code a()}, {@code b()},
+	 * {@code c()}, and the call fails at runtime with a {@link LinkageError}. Only the
+	 * {@code api} and {@code unoptimized} variants are usable by other mods.
 	 */
 	BARITONE_WITHOUT_API
 }
