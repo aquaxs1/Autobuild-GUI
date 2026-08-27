@@ -17,13 +17,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Das Autobuild-Menü: Suchfeld oben, darunter die scrollbare Liste der geladenen
- * Litematica-Placements.
+ * The autobuild menu.
  *
- * <p>Beim Öffnen wird je Placement geprüft, ob das Inventar für einen kompletten Bau
- * reicht. Zeilen mit Fehlbestand sind gesperrt. Klick auf eine freie Zeile startet über
- * {@link BaritoneAdapter} den Build und schließt den Screen; das gerade gebaute
- * Placement zeigt beim erneuten Öffnen eine Laufanzeige mit ✕ zum Abbrechen.
+ * <p>Phase 1: the title and the background only. The placement list arrives in phase 3.
  */
 public class AutobuildScreen extends Screen {
 	private static final int TITLE_TOP_MARGIN = 15;

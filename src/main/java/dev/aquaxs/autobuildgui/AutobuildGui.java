@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Gemeinsame Konstanten des Mods.
+ * Constants shared across the mod.
  */
 public final class AutobuildGui {
 	public static final String MOD_ID = "autobuildgui";
