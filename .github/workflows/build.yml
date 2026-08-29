@@ -1,0 +1,120 @@
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      built: ${{ steps.gradle.outputs.built }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate the Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Baritone is LGPL-3.0 and deliberately not vendored (see build.gradle), so
+      # the compile-only jar has to come from somewhere at build time. Point the
+      # repository variable BARITONE_JAR_URL at an "api" or "unoptimized" build
+      # (Settings -> Secrets and variables -> Actions -> Variables).
+      - name: Fetch the Baritone jar
+        id: baritone
+        env:
+          BARITONE_JAR_URL: ${{ vars.BARITONE_JAR_URL }}
+        run: |
+          if [ -z "$BARITONE_JAR_URL" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Baritone jar missing"
+              echo
+              echo 'The repository variable `BARITONE_JAR_URL` is not set, so there is'
+              echo 'nothing to compile the Baritone adapter against and the build was skipped.'
+              echo
+              echo 'Set it to a direct link to an **api** or **unoptimized** Baritone build'
+              echo 'for Minecraft 26.2 under Settings -> Secrets and variables -> Actions.'
+              echo 'The `standalone` variant does not work - it strips the public API.'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          curl --fail --location --silent --show-error \
+               --output libs/baritone.jar "$BARITONE_JAR_URL"
+          echo "available=true" >> "$GITHUB_OUTPUT"
+          echo "Fetched $(du -h libs/baritone.jar | cut -f1) into libs/baritone.jar"
+
+      - name: Build
+        id: gradle
+        if: steps.baritone.outputs.available == 'true'
+        run: |
+          ./gradlew build --no-daemon
+          echo "built=true" >> "$GITHUB_OUTPUT"
+
+      # The sources jar and the "-dev"/"-sources" intermediates Loom leaves behind
+      # are not what people install, so only the remapped mod jar is kept.
+      - name: Collect the mod jar
+        if: steps.gradle.outputs.built == 'true'
+        run: |
+          mkdir -p dist
+          find build/libs -name '*.jar' \
+            ! -name '*-sources.jar' ! -name '*-dev.jar' \
+            -exec cp {} dist/ \;
+          ls -l dist
+          ( cd dist && sha256sum *.jar > SHA256SUMS.txt && cat SHA256SUMS.txt )
+
+      - name: Upload the mod jar
+        if: steps.gradle.outputs.built == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: autobuild-gui
+          path: dist/
+          if-no-files-found: error
+
+  # Creating the release is deliberately independent of the build succeeding: if
+  # the jar could not be built here, the release still appears for the tag and the
+  # jar can be attached by hand.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the built jar
+        id: artifact
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: autobuild-gui
+          path: dist
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [ -d dist ] && [ -n "$(ls -A dist 2>/dev/null)" ]; then
+            gh release create "$TAG" dist/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$TAG" \
+              --generate-notes
+          else
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$TAG" \
+              --generate-notes
+            echo "No jar was built - attach it to the release manually." >> "$GITHUB_STEP_SUMMARY"
+          fi
