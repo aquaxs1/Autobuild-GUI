@@ -22,9 +22,16 @@ is then reachable at `https://aquaxs1.github.io/Autobuild-GUI/`. Any other stati
 (Vercel, Netlify, Cloudflare Pages, …) can point its build output directory at `site/`
 directly.
 
-The download button points at the release asset `autobuild-gui-0.1.0.jar`. On a new
-release, the version number, the file size and the SHA-256 in `site/index.html` have to
-be updated.
+The download button points at `releases/latest`, so a new release needs no edit to the
+site — GitHub always resolves it to the newest published version.
+
+Releases are built by [`.github/workflows/build.yml`](.github/workflows/build.yml). Because
+Baritone is LGPL-3.0 and deliberately not vendored, the workflow needs a compile-only copy:
+set the repository variable `BARITONE_JAR_URL` (**Settings → Secrets and variables →
+Actions → Variables**) to a direct link to an **api** or **unoptimized** Baritone build for
+26.2 — the `standalone` variant strips the public API and does not work. Without that
+variable the build step is skipped rather than failed. Pushing a `v*` tag creates the
+release either way, so the jar can always be attached by hand.
 
 ---
 
