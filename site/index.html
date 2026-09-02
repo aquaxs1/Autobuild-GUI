@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#0F1211">
+<meta name="theme-color" content="#000000">
 <title>Autobuild GUI</title>
 <meta name="description" content="A client-side Fabric mod for Minecraft 26.2: press the hotkey, click a Litematica placement, Baritone builds it. Download as a .jar.">
 <link rel="canonical" href="https://aquaxs1.github.io/Autobuild-GUI/">
@@ -12,18 +12,25 @@
 <meta property="og:description" content="One hotkey, one list, one click — and Baritone builds the Litematica schematic you picked.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://aquaxs1.github.io/Autobuild-GUI/">
+<meta property="og:image" content="https://aquaxs1.github.io/Autobuild-GUI/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500&family=Pixelify+Sans:wght@400;500;700&display=swap">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230F1211'/%3E%3Crect x='2' y='2' width='12' height='12' fill='%238B8B8B'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%233F3F3F'/%3E%3Crect x='4' y='7' width='8' height='2' fill='%234CAF50'/%3E%3C/svg%3E">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/blockfield.js" defer></script>
 </head>
 <body>
+<canvas id="blockfield" aria-hidden="true"></canvas>
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="topbar">
   <div class="wrap">
-    <a class="brand" href="#top"><span class="cube"></span>Autobuild GUI</a>
+    <a class="brand" href="#top"><img class="mark" src="assets/logo.svg" alt="" width="28" height="28">Autobuild GUI</a>
     <nav class="topnav">
       <a href="#features">Features</a>
       <a href="#interface">Interface</a>
@@ -55,6 +62,7 @@
         <span class="chip">Java <b>25</b></span>
         <span class="chip">Licence <b>MIT</b></span>
       </div>
+      <p class="hint"><span class="pick" aria-hidden="true"></span>The background is stone. Click it — or hold and drag — and it breaks.</p>
     </div>
 
     <!-- A recreation of the menu, the way the mod draws it -->
@@ -63,7 +71,7 @@
       <div class="mc-input"><span class="caret"></span>Search...</div>
       <div class="rows">
         <div class="row hover">
-          <span class="icon" style="color:#C9B08A"><i></i></span>
+          <span class="icon" style="color:#D4D4D4"><i></i></span>
           <span class="meta">
             <span class="name">Cathedral_v3</span>
             <span class="sub">64x48x39 - 218,406 blocks</span>
@@ -71,7 +79,7 @@
           <span class="status">Ready</span>
         </div>
         <div class="row">
-          <span class="icon" style="color:#6FA8DC"><i></i></span>
+          <span class="icon" style="color:#9E9E9E"><i></i></span>
           <span class="meta">
             <span class="name">Sky_Base_final</span>
             <span class="sub">32x18x24 - 12,480 blocks</span>
@@ -79,7 +87,7 @@
           <span class="running"><span class="bar"><span></span></span><span class="x"></span></span>
         </div>
         <div class="row blocked">
-          <span class="icon" style="color:#B4413C"><i></i></span>
+          <span class="icon" style="color:#5A5A5A"><i></i></span>
           <span class="meta">
             <span class="name">Redstone_Farm_8k</span>
             <span class="sub">96x22x96 - 41,020 blocks</span>
@@ -87,7 +95,7 @@
           <span class="status miss">1,284 blocks missing</span>
         </div>
         <div class="row">
-          <span class="icon" style="color:#8E8E8E"><i></i></span>
+          <span class="icon" style="color:#767676"><i></i></span>
           <span class="meta">
             <span class="name">Bridge_North</span>
             <span class="sub">128x9x7 - 6,912 blocks</span>
@@ -126,7 +134,7 @@
       <div class="feature">
         <span class="tag">Material-Check</span>
         <h3>Missing blocks, upfront</h3>
-        <p>Short on blocks? The row says how many — click locked.</p>
+        <p>Short on blocks? The row says how many, and stays locked.</p>
       </div>
       <div class="feature">
         <span class="tag">One click</span>
@@ -136,7 +144,7 @@
       <div class="feature">
         <span class="tag">Control</span>
         <h3>Cancel anytime</h3>
-        <p>Reopen the menu for a bar and a red <em>✕</em> to cancel.</p>
+        <p>Reopen the menu for a bar and an <em>✕</em> to cancel.</p>
       </div>
       <div class="feature">
         <span class="tag">Robust</span>
@@ -181,7 +189,7 @@
         <p class="screen-title">Anatomy of a row</p>
         <div class="rows">
           <div class="row hover" style="padding:12px 10px">
-            <span class="icon" style="color:#6FA8DC;width:30px;height:30px"><i></i></span>
+            <span class="icon" style="color:#9E9E9E;width:30px;height:30px"><i></i></span>
             <span class="meta">
               <span class="name" style="font-size:1.05rem">Sky_Base_final</span>
               <span class="sub" style="font-size:.88rem">32x18x24 - 12,480 blocks</span>
@@ -208,7 +216,7 @@
         <li>
           <span class="swatch"><span class="sw-text">1,284<br>missing</span></span>
           <div>
-            <p>Missing material locks the row.</p>
+            <p>Missing material strikes the row out and locks it.</p>
           </div>
         </li>
         <li>
@@ -294,7 +302,7 @@
   <div class="wrap">
     <div class="fgrid">
       <div class="fabout">
-        <a class="brand" href="#top"><span class="cube"></span>Autobuild GUI</a>
+        <a class="brand" href="#top"><img class="mark" src="assets/logo.svg" alt="" width="28" height="28">Autobuild GUI</a>
         <p>A client-side Fabric mod for Minecraft 26.2 — a menu, built by Baritone.</p>
       </div>
       <div>
@@ -332,5 +340,6 @@
     </div>
   </div>
 </footer>
+<div class="hud" aria-hidden="true">Blocks mined <b id="mined-count">0</b></div>
 </body>
 </html>

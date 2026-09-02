@@ -12,6 +12,7 @@
 		"issues": "https://github.com/aquaxs1/Autobuild-GUI/issues"
 	},
 	"license": "MIT",
+	"icon": "assets/autobuildgui/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"client": [

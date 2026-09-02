@@ -14,6 +14,16 @@ Baritone's job, reading the schematics entirely Litematica's.
 The project page — download, a short description, a look at the interface and the terms
 of use — lives as a static page in [`site/`](site/index.html).
 
+It is black and white throughout, and the background is a field of stone blocks you can
+mine: a click breaks the block under the pointer, holding the button down and dragging
+sweeps through them, and holes grow back after a few seconds. That lives in
+[`site/assets/js/blockfield.js`](site/assets/js/blockfield.js) — a single canvas behind
+the page, decorative only, and it respects `prefers-reduced-motion`. The page's Content
+Security Policy allows no inline script, so it has to stay a separate file.
+
+The logo — the three blocks in a cycle — is [`site/assets/logo.svg`](site/assets/logo.svg)
+for the page and `src/main/resources/assets/autobuildgui/icon.png` for the mod list.
+
 GitHub Pages' "Deploy from a branch" option only serves the repository root or a `/docs`
 folder, not `/site` — publish this way instead: **Settings → Pages → Source: "GitHub
 Actions"**, then add a workflow that uploads `site/` as the Pages artifact (see
