@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://aquaxs1.github.io/Autobuild-GUI/sitemap.xml
+Sitemap: https://autobuild-gui.vercel.app/sitemap.xml
