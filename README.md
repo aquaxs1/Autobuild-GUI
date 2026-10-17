@@ -31,13 +31,10 @@ it if the site moves or starts loading anything new.
 The logo — the three blocks in a cycle — is [`site/assets/logo.svg`](site/assets/logo.svg)
 for the page and `src/main/resources/assets/autobuildgui/icon.png` for the mod list.
 
-GitHub Pages' "Deploy from a branch" option only serves the repository root or a `/docs`
-folder, not `/site` — publish this way instead: **Settings → Pages → Source: "GitHub
-Actions"**, then add a workflow that uploads `site/` as the Pages artifact (see
-[`actions/upload-pages-artifact`](https://github.com/actions/upload-pages-artifact)). It
-is then reachable at `https://aquaxs1.github.io/Autobuild-GUI/`. Any other static host
-(Vercel, Netlify, Cloudflare Pages, …) can point its build output directory at `site/`
-directly.
+The site is deployed on Vercel (project root directory `site/`) and reachable at
+`https://autobuild-gui.vercel.app/`. Canonical links, Open Graph URLs, `sitemap.xml` and
+`robots.txt` use that address; if the site moves to another host or domain, update them
+together (and the hosting paragraph in the privacy section of `terms.html`).
 
 The download button points at `releases/latest`, so a new release needs no edit to the
 site — GitHub always resolves it to the newest published version.
