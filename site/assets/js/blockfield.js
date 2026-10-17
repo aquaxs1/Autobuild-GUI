@@ -189,12 +189,17 @@
     });
     mined++;
     showCount();
+    saveCount();
     spawnParticles(at.col, at.row);
     start();
   }
 
   function showCount() {
     if (counter) counter.textContent = String(mined);
+  }
+
+  /** Only mining stores the count: a visit on its own leaves nothing behind. */
+  function saveCount() {
     try {
       window.localStorage.setItem('autobuildgui:mined', String(mined));
     } catch (err) {

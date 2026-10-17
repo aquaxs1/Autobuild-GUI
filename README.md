@@ -21,6 +21,13 @@ sweeps through them, and holes grow back after a few seconds. That lives in
 the page, decorative only, and it respects `prefers-reduced-motion`. The page's Content
 Security Policy allows no inline script, so it has to stay a separate file.
 
+The page loads nothing from other hosts: the fonts are served from
+[`site/assets/fonts/`](site/assets/fonts/), not from Google Fonts. The only thing it
+stores is the mined-blocks counter (`localStorage`, key `autobuildgui:mined`), and only
+once a block has been mined. Both are described in the privacy section of
+[`site/terms.html`](site/terms.html#privacy), which also names Vercel as the host — update
+it if the site moves or starts loading anything new.
+
 The logo — the three blocks in a cycle — is [`site/assets/logo.svg`](site/assets/logo.svg)
 for the page and `src/main/resources/assets/autobuildgui/icon.png` for the mod list.
 
