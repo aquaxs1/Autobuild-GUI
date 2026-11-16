@@ -1,0 +1,138 @@
+/* Autobuild GUI — torchlight on stone. Everything else is assets/aqx/aqx.css. */
+
+:root {
+  --ac: #ffb347;
+  --ac-hi: #ffd9a0;
+  --ac-ink: #1c1000;
+}
+
+/* Two whole sentences in the headline: one size down, so they stay three lines. */
+.hero h1 {
+  font-size: clamp(2.4rem, 3.7vw + 0.9rem, 4.3rem);
+}
+
+/* A recreation of the in-game menu: a search box and one row per placement. */
+.menu-search {
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--line-soft);
+  background: rgba(0, 0, 0, 0.4);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--faint);
+}
+
+.menu-rows {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+}
+
+.menu-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.menu-row > i {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 4px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.12)),
+    #6f757c;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.menu-name {
+  display: grid;
+  min-width: 0;
+  font-family: var(--font-mono);
+}
+
+.menu-name b {
+  font-size: 0.84rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-name small {
+  font-size: 0.7rem;
+  color: var(--faint);
+}
+
+.menu-state {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-align: right;
+}
+
+.menu-row[data-state='running'] {
+  border-color: color-mix(in srgb, var(--ac) 50%, transparent);
+}
+
+.menu-row[data-state='locked'] .menu-name b {
+  text-decoration: line-through;
+  color: var(--faint);
+}
+
+.menu-row[data-state='locked'] .menu-state {
+  color: var(--bad);
+}
+
+/* Baritone reports no progress, so the bar only says "running". */
+.menu-bar {
+  position: relative;
+  display: inline-block;
+  width: 4.2rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.menu-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  border-radius: inherit;
+  background: var(--ac);
+  animation: menu-run 1.4s linear infinite;
+}
+
+@keyframes menu-run {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+.spec {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1.25rem;
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.spec dt {
+  color: var(--muted);
+}
+
+.spec dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+}
