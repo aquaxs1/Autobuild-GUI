@@ -1,342 +1,390 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#000000">
-<title>Autobuild GUI</title>
-<meta name="description" content="A client-side Fabric mod for Minecraft 26.2: press the hotkey, click a Litematica placement, Baritone builds it. Download as a .jar.">
-<link rel="canonical" href="https://autobuild-gui.vercel.app/">
-<meta property="og:title" content="Autobuild GUI">
-<meta property="og:description" content="One hotkey, one list, one click — and Baritone builds the Litematica schematic you picked.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://autobuild-gui.vercel.app/">
-<meta property="og:image" content="https://autobuild-gui.vercel.app/assets/og.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="stylesheet" href="assets/css/style.css">
-<script src="assets/js/blockfield.js" defer></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Autobuild GUI — click a Litematica placement, Baritone builds it</title>
+  <meta name="description" content="A client-side Fabric mod for Minecraft 26.2: press the hotkey, click a Litematica placement, Baritone builds it. Download as a .jar.">
+  <link rel="canonical" href="https://autobuild-gui.vercel.app/">
+  <meta name="theme-color" content="#050806">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Autobuild GUI">
+  <meta property="og:title" content="Autobuild GUI — click a Litematica placement, Baritone builds it">
+  <meta property="og:description" content="A client-side Fabric mod for Minecraft 26.2: press the hotkey, click a Litematica placement, Baritone builds it. Download as a .jar.">
+  <meta property="og:url" content="https://autobuild-gui.vercel.app/">
+  <meta property="og:image" content="https://autobuild-gui.vercel.app/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="preload" href="assets/aqx/fonts/bodoni-moda-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/aqx/fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/aqx/aqx.css">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/aqx/boot.js"></script>
+  <script type="module" src="assets/aqx/aqx.js"></script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "Autobuild GUI", "description": "A client-side Fabric mod for Minecraft 26.2: press the hotkey, click a Litematica placement, Baritone builds it. Download as a .jar.", "url": "https://autobuild-gui.vercel.app/", "applicationCategory": "GameApplication", "operatingSystem": "Windows, macOS, Linux", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "author": {"@type": "Person", "name": "AquAxs", "url": "https://aqua.is-a.dev/"}, "image": "https://autobuild-gui.vercel.app/assets/og.png", "license": "https://opensource.org/licenses/MIT", "sameAs": ["https://github.com/aquaxs1/Autobuild-GUI"]}</script>
 </head>
 <body>
-<canvas id="blockfield" aria-hidden="true"></canvas>
-<a class="skip" href="#main">Skip to content</a>
+  <a class="skip" href="#main">Skip to content</a>
+  <canvas class="aqx-sky" aria-hidden="true"></canvas>
+  <div class="aqx-aura" aria-hidden="true"></div>
+  <div class="aqx-progress" aria-hidden="true"></div>
 
-<header class="topbar">
-  <div class="wrap">
-    <a class="brand" href="#top"><img class="mark" src="assets/logo.svg" alt="" width="28" height="28">Autobuild GUI</a>
-    <nav class="topnav">
-      <a href="#features">Features</a>
-      <a href="#interface">Interface</a>
-      <a href="#setup">Setup</a>
-      <a href="https://github.com/aquaxs1/Autobuild-GUI">GitHub</a>
-    </nav>
-    <a class="btn btn-primary" href="download.html">Download</a>
-  </div>
-</header>
-
-<main id="main">
-<div id="top"></div>
-
-<!-- ============ HERO ============ -->
-<div class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <p class="tagline">Fabric · Minecraft 26.2 · Client-side</p>
-      <h1>Autobuild&nbsp;GUI
-        <span class="thin">Click a Litematica placement. Baritone builds it.</span>
-      </h1>
-      <p class="lede">No commands, no indices to guess — <kbd>B</kbd>, pick a row, <strong>done</strong>.</p>
-      <div class="cta-row">
-        <a class="btn btn-primary" href="download.html">Download</a>
-        <a class="btn" href="https://github.com/aquaxs1/Autobuild-GUI">View the source</a>
-      </div>
-      <div class="specs">
-        <span class="chip">Minecraft <b>26.2</b></span>
-        <span class="chip">Java <b>25</b></span>
-        <span class="chip">Licence <b>MIT</b></span>
-      </div>
-      <p class="hint"><span class="pick" aria-hidden="true"></span>The background is stone. Click it — or hold and drag — and it breaks.</p>
-    </div>
-
-    <!-- A recreation of the menu, the way the mod draws it -->
-    <div class="screen" role="img" aria-label="A recreation of the Autobuild menu: a search box and four placement rows. Cathedral_v3 is ready, Sky_Base_final is being built and shows a running bar with a cancel cross, Redstone_Farm_8k is locked because 1284 blocks are missing, Bridge_North is ready.">
-      <p class="screen-title">Autobuild</p>
-      <div class="mc-input"><span class="caret"></span>Search...</div>
-      <div class="rows">
-        <div class="row hover">
-          <span class="icon" style="color:#D4D4D4"><i></i></span>
-          <span class="meta">
-            <span class="name">Cathedral_v3</span>
-            <span class="sub">64x48x39 - 218,406 blocks</span>
-          </span>
-          <span class="status">Ready</span>
-        </div>
-        <div class="row">
-          <span class="icon" style="color:#9E9E9E"><i></i></span>
-          <span class="meta">
-            <span class="name">Sky_Base_final</span>
-            <span class="sub">32x18x24 - 12,480 blocks</span>
-          </span>
-          <span class="running"><span class="bar"><span></span></span><span class="x"></span></span>
-        </div>
-        <div class="row blocked">
-          <span class="icon" style="color:#5A5A5A"><i></i></span>
-          <span class="meta">
-            <span class="name">Redstone_Farm_8k</span>
-            <span class="sub">96x22x96 - 41,020 blocks</span>
-          </span>
-          <span class="status miss">1,284 blocks missing</span>
-        </div>
-        <div class="row">
-          <span class="icon" style="color:#767676"><i></i></span>
-          <span class="meta">
-            <span class="name">Bridge_North</span>
-            <span class="sub">128x9x7 - 6,912 blocks</span>
-          </span>
-          <span class="status">Ready</span>
-        </div>
-      </div>
-      <div class="screen-foot">
-        <span>Open the menu: <kbd>B</kbd></span>
-        <span>A live recreation of the interface</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ FEATURES ============ -->
-<section id="features">
-  <div class="wrap">
-    <div class="sec-head">
-      <p class="eyebrow">What the mod does</p>
-      <h2>Six things, no more.</h2>
-      <p>Reads Litematica, checks your inventory, hands off to Baritone.</p>
-    </div>
-
-    <div class="features">
-      <div class="feature">
-        <span class="tag">Hotkey</span>
-        <h3>One key, one menu</h3>
-        <p>No chat command. Rebindable under <em>Options → Controls</em>.</p>
-      </div>
-      <div class="feature">
-        <span class="tag">Overview</span>
-        <h3>Every placement at a glance</h3>
-        <p>Name, size, block count. Search filters as you type.</p>
-      </div>
-      <div class="feature">
-        <span class="tag">Material-Check</span>
-        <h3>Missing blocks, upfront</h3>
-        <p>Short on blocks? The row says how many, and stays locked.</p>
-      </div>
-      <div class="feature">
-        <span class="tag">One click</span>
-        <h3>One click builds</h3>
-        <p>No indices, no <code>#build</code> with coordinates — just that placement.</p>
-      </div>
-      <div class="feature">
-        <span class="tag">Control</span>
-        <h3>Cancel anytime</h3>
-        <p>Reopen the menu for a bar and an <em>✕</em> to cancel.</p>
-      </div>
-      <div class="feature">
-        <span class="tag">Robust</span>
-        <h3>Fails gracefully</h3>
-        <p>Missing Litematica or Baritone? The menu still opens and says what's missing.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ INTERFACE ============ -->
-<section id="interface">
-  <div class="wrap">
-    <div class="sec-head">
-      <p class="eyebrow">How it works</p>
-      <h2>Three mods, one chain.</h2>
-      <p>This mod places no blocks itself — it's the menu in between.</p>
-    </div>
-
-    <div class="pipe">
-      <div class="step">
-        <p class="who">Litematica</p>
-        <b>Loads the schematic</b>
-        <p>Load your <code>.litematic</code> file, place it in the world.</p>
-      </div>
-      <div class="arrow" aria-hidden="true">→</div>
-      <div class="step self">
-        <p class="who">Autobuild GUI</p>
-        <b>Shows the list, you click</b>
-        <p>Press <kbd>B</kbd>, pick a row — inventory checked first.</p>
-      </div>
-      <div class="arrow" aria-hidden="true">→</div>
-      <div class="step">
-        <p class="who">Baritone</p>
-        <b>Walks and builds</b>
-        <p>Pathfinding and placement are Baritone's, until you cancel or it's done.</p>
-      </div>
-    </div>
-
-    <div class="anatomy">
-      <div class="screen">
-        <p class="screen-title">Anatomy of a row</p>
-        <div class="rows">
-          <div class="row hover" style="padding:12px 10px">
-            <span class="icon" style="color:#9E9E9E;width:30px;height:30px"><i></i></span>
-            <span class="meta">
-              <span class="name" style="font-size:1.05rem">Sky_Base_final</span>
-              <span class="sub" style="font-size:.88rem">32x18x24 - 12,480 blocks</span>
-            </span>
-            <span class="running"><span class="bar"><span></span></span><span class="x"></span></span>
-          </div>
-        </div>
-        <div class="screen-foot"><span>Row height 28&nbsp;px</span><span>Bar: 1.4&nbsp;s per round</span></div>
-      </div>
-
-      <ul class="legend">
-        <li>
-          <span class="swatch"><span class="sw-icon"></span></span>
-          <div>
-            <p>Icon, name and size below in grey.</p>
-          </div>
-        </li>
-        <li>
-          <span class="swatch"><span class="sw-bar"></span></span>
-          <div>
-            <p>Baritone reports no real progress, not a percentage.</p>
-          </div>
-        </li>
-        <li>
-          <span class="swatch"><span class="sw-text">1,284<br>missing</span></span>
-          <div>
-            <p>Missing material strikes the row out and locks it.</p>
-          </div>
-        </li>
-        <li>
-          <span class="swatch"><svg class="sw-cursor" viewBox="0 0 12 16" aria-hidden="true"><path d="M0 0 L0 12 L3 9 L5.5 15 L7.5 14 L5 8.5 L9 8.5 Z"/></svg></span>
-          <div>
-            <p>Click, menu closes, Baritone runs.</p>
-          </div>
-        </li>
+  <header class="nav" data-stuck="false" data-open="false">
+    <div class="nav-inner">
+      <a class="brand" href="./" aria-label="Autobuild GUI home"><img src="assets/logo.svg" alt="" width="32" height="32"><span>Autobuild GUI</span></a>
+      <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-links"><span></span></button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="./#interface">Interface</a></li>
+        <li><a href="./#features">Features</a></li>
+        <li><a href="./#setup">Setup</a></li>
+        <li><a href="https://github.com/aquaxs1/Autobuild-GUI" rel="noopener">GitHub</a></li>
+        <li><a class="btn btn-primary btn-sm" href="download">Download</a></li>
       </ul>
     </div>
-  </div>
-</section>
+  </header>
 
-<!-- ============ SETUP ============ -->
-<section id="setup">
-  <div class="wrap">
-    <div class="sec-head">
-      <p class="eyebrow">Setup</p>
-      <h2>What belongs in the mods folder.</h2>
-      <p>Everything for Minecraft <strong>26.2</strong> and Fabric — Litematica and Baritone are optional, but there's nothing to build without them.</p>
-    </div>
-
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr><th scope="col">Mod</th><th scope="col">Version</th><th scope="col">What for</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Fabric Loader</td><td class="v">≥ 0.19.3</td><td><span class="req">Required</span></td></tr>
-          <tr><td>Fabric API</td><td class="v">0.156.0+26.2</td><td><span class="req">Required</span></td></tr>
-          <tr><td><a href="https://www.curseforge.com/minecraft/mc-mods/litematica">Litematica</a></td><td class="v">26.2-0.28.4+</td><td><span class="opt">For the placement list</span></td></tr>
-          <tr><td><a href="https://www.curseforge.com/minecraft/mc-mods/malilib">MaLiLib</a></td><td class="v">26.2-0.29.2+</td><td><span class="opt">Needed by Litematica</span></td></tr>
-          <tr><td>Baritone</td><td class="v">for 26.2</td><td><span class="opt">For the building — see below</span></td></tr>
-          <tr><td>Java</td><td class="v">25</td><td><span class="req">Required</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="warn">
-      <p class="lbl">Pick the right Baritone variant</p>
-      <h3>The <code>standalone</code> build does not work.</h3>
-      <p>Baritone ships in three variants; <code>standalone</code> strips the public API, leaving unusable <code>a()</code>/<code>b()</code>/<code>c()</code> methods — nothing crashes, but the build won't start. Use <strong>api</strong> or <strong>unoptimized</strong>.</p>
-      <p><strong>Recommended:</strong> <a href="https://meteorclient.com">meteorclient.com</a> → <strong>"*Baritone [26.2]"</strong>, MeteorDevelopment's fork. The full Meteor Client isn't required.</p>
-    </div>
-
-    <ol class="steps">
-      <li><b>Install Fabric</b><p>Fabric Loader for 26.2, started once to create the <code>mods</code> folder.</p></li>
-      <li><b>Drop in the dependencies</b><p>Copy Fabric API, MaLiLib + Litematica, and Baritone into <code>mods</code>.</p></li>
-      <li><b>Add the Autobuild GUI jar</b><p>Add this JAR too — client-side only, nothing needed on the server.</p></li>
-      <li><b>Enter a world, press <kbd>B</kbd></b><p>Optional: <code>config/autobuildgui.json</code> controls <code>closeScreenOnBuildStart</code> and <code>materialCheckEnabled</code>.</p></li>
-    </ol>
-  </div>
-</section>
-
-<!-- ============ LIMITS ============ -->
-<section id="limits">
-  <div class="wrap">
-    <div class="sec-head">
-      <p class="eyebrow">Honestly</p>
-      <h2>Where the mod hits its limits.</h2>
-    </div>
-    <ul class="notes">
-      <li>
-        <h3>No percentage progress</h3>
-        <p>Baritone reports no progress, so the bar just shows "running".</p>
-      </li>
-      <li>
-        <h3>The material check is pessimistic</h3>
-        <p>Litematica counts from zero, so a half-built placement looks short. Creative mode skips the check.</p>
-      </li>
-      <li>
-        <h3>Client-side only</h3>
-        <p>No network packets of its own — same server rules as Baritone.</p>
-      </li>
-    </ul>
-  </div>
-</section>
-
-</main>
-
-<!-- ============ FOOTER ============ -->
-<footer>
-  <div class="wrap">
-    <div class="fgrid">
-      <div class="fabout">
-        <a class="brand" href="#top"><img class="mark" src="assets/logo.svg" alt="" width="28" height="28">Autobuild GUI</a>
-        <p>A client-side Fabric mod for Minecraft 26.2 — a menu, built by Baritone.</p>
+  <main id="main">
+    <section class="hero">
+      <div class="stage" data-scene="assets/scene.js" data-mode="hero" aria-hidden="true"><canvas></canvas></div>
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <span class="eyebrow">Fabric · Minecraft 26.2 · Client-side</span>
+          <h1>Click a Litematica placement. <em>Baritone builds it.</em></h1>
+          <p class="lead">No commands, no indices to guess — <kbd>B</kbd>, pick a row, <strong>done</strong>.</p>
+          <div class="btn-row">
+            <a class="btn btn-primary btn-lg" href="download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Download</a>
+            <a class="btn btn-lg" href="https://github.com/aquaxs1/Autobuild-GUI" rel="noopener">View the source</a>
+          </div>
+          <p class="hero-note">Minecraft 26.2 · Java 25 · Licence MIT</p>
+        </div>
       </div>
-      <div>
-        <h4>Project</h4>
+      <span class="hero-hint">Click for the next placement</span>
+    </section>
+
+    <section class="sec" id="interface">
+      <div class="wrap">
+        <div class="split">
+          <div class="stack reveal">
+            <span class="eyebrow">Anatomy of a row</span>
+            <h2>Every placement, <em>one list.</em></h2>
+            <p class="lead">A recreation of the menu, the way the mod draws it: a search box and one row per placement.</p>
+            <ul class="points">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 4.500v9L12 21l-8-4.500v-9zM4 7.500l8 4.500 8-4.500M12 12v9"/></svg><span>Icon, name and size below in grey.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></svg><span>Baritone reports no real progress, not a percentage.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m5.600 5.600 12.800 12.800"/></svg><span>Missing material strikes the row out and locks it.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 3 14 8-6 2-2 6z"/></svg><span>Click, menu closes, Baritone runs.</span></li>
+            </ul>
+            <p class="muted">Row height 28&nbsp;px · Bar: 1.4&nbsp;s per round</p>
+          </div>
+          <div class="showcase reveal">
+            <div class="panel" role="img" aria-label="A recreation of the Autobuild menu: a search box and four placement rows. Cathedral_v3 is ready, Sky_Base_final is being built and shows a running bar with a cancel cross, Redstone_Farm_8k is locked because 1284 blocks are missing, Bridge_North is ready.">
+              <div class="panel-bar"><i></i><i></i><i></i><span>Autobuild</span></div>
+              <div class="panel-body">
+                <div class="menu-search">Search...</div>
+                <div class="menu-rows">
+                  <div class="menu-row">
+                    <i></i>
+                    <span class="menu-name"><b>Cathedral_v3</b><small>64x48x39 - 218,406 blocks</small></span>
+                    <span class="menu-state">Ready</span>
+                  </div>
+                  <div class="menu-row" data-state="running">
+                    <i></i>
+                    <span class="menu-name"><b>Sky_Base_final</b><small>32x18x24 - 12,480 blocks</small></span>
+                    <span class="menu-state"><span class="menu-bar"></span> ✕</span>
+                  </div>
+                  <div class="menu-row" data-state="locked">
+                    <i></i>
+                    <span class="menu-name"><b>Redstone_Farm_8k</b><small>96x22x96 - 41,020 blocks</small></span>
+                    <span class="menu-state">1,284 blocks missing</span>
+                  </div>
+                  <div class="menu-row">
+                    <i></i>
+                    <span class="menu-name"><b>Bridge_North</b><small>128x9x7 - 6,912 blocks</small></span>
+                    <span class="menu-state">Ready</span>
+                  </div>
+                </div>
+              </div>
+              <div class="panel-foot">
+                <span>Open the menu: <kbd>B</kbd></span>
+                <span>A live recreation of the interface</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="features">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">What the mod does</span>
+          <h2>Six things, <em>no more.</em></h2>
+          <p class="lead">Reads Litematica, checks your inventory, hands off to Baritone.</p>
+        </div>
+        <div class="cards" data-cols="3">
+          <article class="card reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12 20 3M16 7l3 3M14 9l2 2"/></svg></span>
+            <span class="eyebrow">Hotkey</span>
+            <h3>One key, one menu</h3>
+            <p>No chat command. Rebindable under <em>Options → Controls</em>.</p>
+          </article>
+          <article class="card reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.500 6h.010M3.500 12h.010M3.500 18h.010"/></svg></span>
+            <span class="eyebrow">Overview</span>
+            <h3>Every placement at a glance</h3>
+            <p>Name, size, block count. Search filters as you type.</p>
+          </article>
+          <article class="card reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5M3 17.5l9 5 9-5"/></svg></span>
+            <span class="eyebrow">Material-Check</span>
+            <h3>Missing blocks, upfront</h3>
+            <p>Short on blocks? The row says how many, and stays locked.</p>
+          </article>
+          <article class="card reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 3 14 8-6 2-2 6z"/></svg></span>
+            <span class="eyebrow">One click</span>
+            <h3>One click builds</h3>
+            <p>No indices, no <code>#build</code> with coordinates — just that placement.</p>
+          </article>
+          <article class="card reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+            <span class="eyebrow">Control</span>
+            <h3>Cancel anytime</h3>
+            <p>Reopen the menu for a bar and an <em>✕</em> to cancel.</p>
+          </article>
+          <article class="card reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v6c0 4.4 3 7.7 7 9 4-1.3 7-4.6 7-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <span class="eyebrow">Robust</span>
+            <h3>Fails gracefully</h3>
+            <p>Missing Litematica or Baritone? The menu still opens and says what's missing.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="how">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">How it works</span>
+          <h2>Three mods, <em>one chain.</em></h2>
+          <p class="lead">This mod places no blocks itself — it's the menu in between.</p>
+        </div>
+        <ol class="flow">
+          <li class="reveal">
+            <article class="card">
+              <span class="eyebrow">Litematica</span>
+              <h3>Loads the schematic</h3>
+              <p>Load your <code>.litematic</code> file, place it in the world.</p>
+            </article>
+          </li>
+          <li class="reveal">
+            <article class="card plus">
+              <span class="eyebrow">Autobuild GUI</span>
+              <h3>Shows the list, you click</h3>
+              <p>Press <kbd>B</kbd>, pick a row — inventory checked first.</p>
+            </article>
+          </li>
+          <li class="reveal">
+            <article class="card">
+              <span class="eyebrow">Baritone</span>
+              <h3>Walks and builds</h3>
+              <p>Pathfinding and placement are Baritone's, until you cancel or it's done.</p>
+            </article>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="sec" id="setup">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Setup</span>
+          <h2>What belongs in <em>the mods folder.</em></h2>
+          <p class="lead">Everything for Minecraft <strong>26.2</strong> and Fabric — Litematica and Baritone are optional, but there's nothing to build without them.</p>
+        </div>
+        <div class="table-wrap reveal">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Mod</th>
+                <th scope="col">Version</th>
+                <th scope="col">What for</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Fabric Loader</td>
+                <td>≥ 0.19.3</td>
+                <td><span class="pill pill-accent">Required</span></td>
+              </tr>
+              <tr>
+                <td>Fabric API</td>
+                <td>0.156.0+26.2</td>
+                <td><span class="pill pill-accent">Required</span></td>
+              </tr>
+              <tr>
+                <td><a href="https://www.curseforge.com/minecraft/mc-mods/litematica" rel="noopener">Litematica</a></td>
+                <td>26.2-0.28.4+</td>
+                <td>For the placement list</td>
+              </tr>
+              <tr>
+                <td><a href="https://www.curseforge.com/minecraft/mc-mods/malilib" rel="noopener">MaLiLib</a></td>
+                <td>26.2-0.29.2+</td>
+                <td>Needed by Litematica</td>
+              </tr>
+              <tr>
+                <td>Baritone</td>
+                <td>for 26.2</td>
+                <td>For the building — see below</td>
+              </tr>
+              <tr>
+                <td>Java</td>
+                <td>25</td>
+                <td><span class="pill pill-accent">Required</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note warn stack reveal">
+          <span class="eyebrow">Pick the right Baritone variant</span>
+          <h3>The <code>standalone</code> build does not work.</h3>
+          <p>Baritone ships in three variants; <code>standalone</code> strips the public API, leaving unusable <code>a()</code>/<code>b()</code>/<code>c()</code> methods — nothing crashes, but the build won't start. Use <strong>api</strong> or <strong>unoptimized</strong>.</p>
+          <p><strong>Recommended:</strong> <a class="textlink" href="https://meteorclient.com" rel="noopener">meteorclient.com</a> → <strong>"*Baritone [26.2]"</strong>, MeteorDevelopment's fork. The full Meteor Client isn't required.</p>
+        </div>
+        <ol class="steps" data-cols="4">
+          <li class="reveal">
+            <h3>Install Fabric</h3>
+            <p>Fabric Loader for 26.2, started once to create the <code>mods</code> folder.</p>
+          </li>
+          <li class="reveal">
+            <h3>Drop in the dependencies</h3>
+            <p>Copy Fabric API, MaLiLib + Litematica, and Baritone into <code>mods</code>.</p>
+          </li>
+          <li class="reveal">
+            <h3>Add the Autobuild GUI jar</h3>
+            <p>Add this JAR too — client-side only, nothing needed on the server.</p>
+          </li>
+          <li class="reveal">
+            <h3>Enter a world, press <kbd>B</kbd></h3>
+            <p>Optional: <code>config/autobuildgui.json</code> controls <code>closeScreenOnBuildStart</code> and <code>materialCheckEnabled</code>.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="sec" id="limits">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Honestly</span>
+          <h2>Where the mod <em>hits its limits.</em></h2>
+        </div>
+        <div class="cards" data-cols="3">
+          <article class="card reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></svg></span>
+            <h3>No percentage progress</h3>
+            <p>Baritone reports no progress, so the bar just shows "running".</p>
+          </article>
+          <article class="card reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5M3 17.5l9 5 9-5"/></svg></span>
+            <h3>The material check is pessimistic</h3>
+            <p>Litematica counts from zero, so a half-built placement looks short. Creative mode skips the check.</p>
+          </article>
+          <article class="card reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></svg></span>
+            <h3>Client-side only</h3>
+            <p>No network packets of its own — same server rules as Baritone.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="wrap">
+        <div class="cta reveal">
+          <h2>One jar, straight from <em>the release.</em></h2>
+          <p class="lead">Baritone, Litematica and MaLiLib are not bundled — install them yourself, see <a class="textlink" href="#setup">Setup</a>.</p>
+          <div class="btn-row">
+            <a class="btn btn-primary btn-lg" href="download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Download</a>
+            <a class="btn btn-lg" href="https://github.com/aquaxs1/Autobuild-GUI" rel="noopener">View the source</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-about">
+          <a class="brand" href="./"><img src="assets/logo.svg" alt="" width="32" height="32" loading="lazy"><span>Autobuild GUI</span></a>
+          <p>A client-side Fabric mod for Minecraft 26.2 — a menu, built by Baritone.</p>
+        </div>
+        <nav class="footer-col" aria-label="Project">
+          <h2>Project</h2>
+          <ul>
+            <li><a href="download">Download</a></li>
+            <li><a href="./#interface">Interface</a></li>
+            <li><a href="./#features">Features</a></li>
+            <li><a href="./#setup">Setup</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-col" aria-label="Code">
+          <h2>Code</h2>
+          <ul>
+            <li><a href="https://github.com/aquaxs1/Autobuild-GUI" rel="noopener">GitHub repository</a></li>
+            <li><a href="https://github.com/aquaxs1/Autobuild-GUI/releases" rel="noopener">Releases</a></li>
+            <li><a href="https://github.com/aquaxs1/Autobuild-GUI/issues" rel="noopener">Report a bug</a></li>
+            <li><a href="https://github.com/aquaxs1/Autobuild-GUI#readme" rel="noopener">Documentation</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-col" aria-label="You also need">
+          <h2>You also need</h2>
+          <ul>
+            <li><a href="https://www.curseforge.com/minecraft/mc-mods/litematica" rel="noopener">Litematica</a></li>
+            <li><a href="https://www.curseforge.com/minecraft/mc-mods/malilib" rel="noopener">MaLiLib</a></li>
+            <li><a href="https://meteorclient.com" rel="noopener">Baritone [26.2]</a></li>
+            <li><a href="https://fabricmc.net/use/installer/" rel="noopener">Fabric Loader</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-col" aria-label="Legal">
+          <h2>Legal</h2>
+          <ul>
+            <li><a href="terms">Terms of Use</a></li>
+            <li><a href="terms#privacy">Privacy</a></li>
+            <li><a href="https://github.com/aquaxs1/Autobuild-GUI/blob/main/LICENSE" rel="noopener">Licence</a></li>
+            <li><a href="https://github.com/aquaxs1/Autobuild-GUI/issues" rel="noopener">Support</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="family">
+        <span class="family-label">More by AquAxs</span>
         <ul>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="#features">Features</a></li>
-          <li><a href="#interface">Interface</a></li>
-          <li><a href="#setup">Setup</a></li>
+          <li><a href="https://aqua.is-a.dev/portfolio" data-home rel="noopener">All projects</a></li>
+          <li><a href="https://pfpair.app/" rel="noopener">Pfpair</a></li>
+          <li><a href="https://handled-market.vercel.app/" rel="noopener">Handled</a></li>
+          <li><a href="https://larpcorddc.vercel.app/" rel="noopener">Larpcord</a></li>
+          <li><a href="https://mybluejarvis.vercel.app/" rel="noopener">My Jarvis</a></li>
+          <li><a href="https://guardiantus-av.vercel.app/" rel="noopener">Guardiantus AV</a></li>
+          <li><a href="https://explorer-manager.vercel.app/" rel="noopener">Explorer Manager</a></li>
+          <li><a href="https://cipher-box-file-encrypter.vercel.app/" rel="noopener">CipherBox</a></li>
+          <li><a href="https://easy-cloner.vercel.app/" rel="noopener">Easy Server Cloner</a></li>
+          <li><a href="https://simple-skin.vercel.app/" rel="noopener">Simple Skin</a></li>
+          <li><a href="https://timetrackerextension.vercel.app/" rel="noopener">WebsiteTimeTrack</a></li>
+          <li><a href="https://wave-uninstaller.vercel.app/" rel="noopener">Wave Uninstaller</a></li>
+          <li><a href="https://discord-sakurabot.vercel.app/" rel="noopener">Sakura Bot</a></li>
+          <li><a href="https://revox-client.vercel.app/" rel="noopener">Revox Client</a></li>
+          <li><a href="https://chesstrainer.cc.cd/" rel="noopener">Chess Trainer</a></li>
         </ul>
       </div>
-      <div>
-        <h4>Code</h4>
-        <ul>
-          <li><a href="https://github.com/aquaxs1/Autobuild-GUI">GitHub repository</a></li>
-          <li><a href="https://github.com/aquaxs1/Autobuild-GUI/releases">Releases</a></li>
-          <li><a href="https://github.com/aquaxs1/Autobuild-GUI/issues">Report a bug</a></li>
-          <li><a href="https://github.com/aquaxs1/Autobuild-GUI/blob/main/README.md">Documentation</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>You also need</h4>
-        <ul>
-          <li><a href="https://www.curseforge.com/minecraft/mc-mods/litematica">Litematica</a></li>
-          <li><a href="https://www.curseforge.com/minecraft/mc-mods/malilib">MaLiLib</a></li>
-          <li><a href="https://meteorclient.com">Baritone [26.2]</a></li>
-          <li><a href="https://fabricmc.net/use/installer/">Fabric Loader</a></li>
-        </ul>
+      <div class="footer-legal">
+        <p>© 2026 aquaxs1 · MIT licence</p>
+        <p>Not an official Minecraft product. Not associated with Mojang or Microsoft.</p>
       </div>
     </div>
-    <div class="fbottom">
-      <span>© 2026 aquaxs1 · MIT licence</span>
-      <span><a href="terms.html">Terms of Use</a> · <a href="terms.html#privacy">Privacy</a> · <a href="https://github.com/aquaxs1/Autobuild-GUI/blob/main/LICENSE">Licence</a> · <a href="https://github.com/aquaxs1/Autobuild-GUI/issues">Support</a></span>
-      <span>Not an official Minecraft product. Not associated with Mojang or Microsoft.</span>
-    </div>
-  </div>
-</footer>
-<div class="hud" aria-hidden="true">Blocks mined <b id="mined-count">0</b></div>
+  </footer>
 </body>
 </html>

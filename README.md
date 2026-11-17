@@ -14,22 +14,27 @@ Baritone's job, reading the schematics entirely Litematica's.
 The project page — download, a short description, a look at the interface and the terms
 of use — lives as a static page in [`site/`](site/index.html).
 
-It is black and white throughout, and the background is a field of stone blocks you can
-mine: a click breaks the block under the pointer, holding the button down and dragging
-sweeps through them, and holes grow back after a few seconds. That lives in
-[`site/assets/js/blockfield.js`](site/assets/js/blockfield.js) — a single canvas behind
-the page, decorative only, and it respects `prefers-reduced-motion`. The page's Content
-Security Policy allows no inline script, so it has to stay a separate file.
+It shares its look with the other AquAxs project sites — black, glass cards, Bodoni
+headlines; the shared kit is [`site/assets/aqx/`](site/assets/aqx/) — and adds an amber
+accent and a 3D scene of its own. [`site/assets/scene.js`](site/assets/scene.js) shows a
+placement the way Litematica does, as a faint outline of the schematic, while blocks are
+placed bottom layer first; a click or tap starts the next placement. The scene is
+decorative only, pauses off screen and respects `prefers-reduced-motion`. The page's
+Content Security Policy allows no inline script or style, so both have to stay separate
+files.
 
-The page loads nothing from other hosts: the fonts are served from
-[`site/assets/fonts/`](site/assets/fonts/), not from Google Fonts. The only thing it
-stores is the mined-blocks counter (`localStorage`, key `autobuildgui:mined`), and only
-once a block has been mined. Both are described in the privacy section of
-[`site/terms.html`](site/terms.html#privacy), which also names Vercel as the host — update
-it if the site moves or starts loading anything new.
+The page loads nothing from other hosts: three.js and the fonts are served from
+[`site/assets/aqx/`](site/assets/aqx/), not from a CDN or Google Fonts. It stores nothing
+in the browser — no cookies, no `localStorage`. Both are described in the privacy section
+of [`site/terms.html`](site/terms.html#privacy), which also names Vercel as the host —
+update it if the site moves, starts loading anything new or starts storing anything.
 
 The logo — the three blocks in a cycle — is [`site/assets/logo.svg`](site/assets/logo.svg)
 for the page and `src/main/resources/assets/autobuildgui/icon.png` for the mod list.
+
+Links between the pages have no `.html` (Vercel serves `/download` from `download.html`),
+so preview the folder through a server that does the same, e.g. `npx serve site`. More in
+[`site/README.md`](site/README.md).
 
 The site is deployed on Vercel (project root directory `site/`) and reachable at
 `https://autobuild-gui.vercel.app/`. Canonical links, Open Graph URLs, `sitemap.xml` and
